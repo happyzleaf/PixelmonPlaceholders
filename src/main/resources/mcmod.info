@@ -1,0 +1,16 @@
+[
+	{
+		"modid": "pixelmonplaceholders",
+		"name": "PixelmonPlaceholders",
+		"description": "Pixelmon Placeholders",
+		"version": "${version}",
+		"mcversion": "${mcversion}",
+		"url": "https://github.com/happyzleaf/PixelmonPlaceholders",
+		"updateUrl": "https://github.com/happyzleaf/PixelmonPlaceholders/releases",
+		"authorList": ["happyzleaf"],
+		"credits": "",
+		"logoFile": "",
+		"screenshots": [],
+		"dependencies": []
+	}
+]
