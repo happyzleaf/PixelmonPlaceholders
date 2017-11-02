@@ -170,8 +170,11 @@ public class Placeholders {
 										break;
 									case "ball":
 										return pokemon.caughtBall.name();
+										//Since 1.2.0
 									case "drops":
 										return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
+									case "nature": //Not tested but won't cause problems probably
+										return pokemon.getNature();
 								}
 							}
 							
