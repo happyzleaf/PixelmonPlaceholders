@@ -1,53 +1,36 @@
-package com.github.happyzleaf.pixelmonplaceholders.expansion;
+package com.github.happyzleaf.pixelmonplaceholders;
 
 import com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Stats;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
+import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.storage.PixelmonStorage;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
-import net.minecraft.block.BlockPackedIce;
+import me.rojo8399.placeholderapi.Listening;
+import me.rojo8399.placeholderapi.Placeholder;
+import me.rojo8399.placeholderapi.Source;
+import me.rojo8399.placeholderapi.Token;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
-/***************************************
- * PixelmonPlaceholders
- * Created on 29/05/2017.
- * @author Vincenzo Montanari
- *
- * Copyright (c). All rights reserved.
- ***************************************/
-public class TrainerExpansion extends ExpansionBase {
-	@Override
-	public String getIdentifier() {
-		return "trainer";
-	}
-	
-	@Override
-	public String getDescription() {
-		return "Pixelmon trainer's Placeholders.";
-	}
-	
-	@Override
-	public List<String> getSupportedTokens() {
-		return Arrays.asList("dexcount", "dexpercentage", "seencount", "wins", "losses", "wlratio", "balance", "team-[position]");
-	}
-	
-	@Override
-	public Object onValueRequest(Player player, Optional<String> token) {
+@Listening
+public class Placeholders {
+	@Placeholder(id = "trainer")
+	public Object trainer(@Source Player player, @Token String token) {
 		Optional<PlayerStorage> optStorage = PixelmonStorage.pokeBallManager.getPlayerStorage((EntityPlayerMP) player);
-		if (token.isPresent() && optStorage.isPresent()) {
+		if (optStorage.isPresent()) {
 			PlayerStorage storage = optStorage.get();
-			String[] values = token.get().split("_");
+			String[] values = token.split("_");
 			switch (values[0]) {
 				case "dexcount":
 					return storage.pokedex.countCaught();
@@ -187,6 +170,8 @@ public class TrainerExpansion extends ExpansionBase {
 										break;
 									case "ball":
 										return pokemon.caughtBall.name();
+									case "drops":
+										return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
 								}
 							}
 							
@@ -195,6 +180,39 @@ public class TrainerExpansion extends ExpansionBase {
 						}
 					}
 					break;
+			}
+		}
+		return null;
+	}
+	
+	@Placeholder(id = "pixelmon")
+	public Object pixelmon(@Source Player player, @Token String token) {
+		switch (token) {
+			case "dexsize":
+				return EnumPokemon.values().length;
+			case "dexsizeall":
+				return Pokedex.pokedexSize;
+		}
+		return null;
+	}
+	
+	@Placeholder(id = "pokedex")
+	public Object pokedex(@Source Player player, @Token String token) {
+		String[] values = token.split("_");
+		if (values.length >= 1) {
+			EnumPokemon pokemon = null;
+			
+			try {
+				int nationalId = Integer.parseInt(values[0]);
+				if (nationalId >= 0 && nationalId <= EnumPokemon.values().length) {
+					pokemon = EnumPokemon.getFromNameAnyCase(Pokedex.fullPokedex.get(nationalId).name);
+				}
+			} catch (NumberFormatException e) {
+				pokemon = EnumPokemon.getFromNameAnyCase(values[0]);
+			}
+			
+			if (pokemon != null) {
+				return ParserUtility.parsePokedexInfo(pokemon, values);
 			}
 		}
 		return null;

@@ -1,10 +1,7 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
-import com.github.happyzleaf.pixelmonplaceholders.expansion.PixelmonExpansion;
-import com.github.happyzleaf.pixelmonplaceholders.expansion.PokedexExpansion;
-import com.github.happyzleaf.pixelmonplaceholders.expansion.TrainerExpansion;
-import me.rojo8399.placeholderapi.PlaceholderAPIPlugin;
 import me.rojo8399.placeholderapi.PlaceholderService;
+import me.rojo8399.placeholderapi.impl.PlaceholderAPIPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
@@ -23,11 +20,11 @@ import java.lang.reflect.Field;
  * Copyright (c). All rights reserved.
  ***************************************/
 @Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, description = "Pixelmon Placeholders", version = PixelmonPlaceholders.VERSION,
-		url = "https://github.com/happyzleaf/PixelmonPlaceholders", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon"), @Dependency(id = "placeholderapi")})
+		url = "https://github.com/happyzleaf/PixelmonPlaceholders", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon"), @Dependency(id = "placeholderapi", version = "[4.1,)")})
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "zpixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "1.1.0";
+	public static final String VERSION = "1.2.0";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
@@ -43,10 +40,24 @@ public class PixelmonPlaceholders {
 		}
 		
 		LOGGER.info("Registering Pixelmon Placeholders.");
-		PlaceholderService papi = Sponge.getServiceManager().provideUnchecked(PlaceholderService.class);
-		papi.registerPlaceholder(new TrainerExpansion());
-		papi.registerPlaceholder(new PixelmonExpansion());
-		papi.registerPlaceholder(new PokedexExpansion());
+		
+		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), this).stream().map(builder -> {
+			switch (builder.getId()) {
+				case "trainer":
+					return builder.tokens("dexcount", "dexpercentage", "seencount", "wins", "losses", "wlratio", "balance", "team-[position]").description("Pixelmon trainer's Placeholders.");
+				case "pixelmon":
+					return builder.tokens("dexsize", "dexsizeall").description("General Pixelmon's placeholders.");
+				case "pokedex":
+					return builder.tokens("[name]", "[nationalId]").description("Specific Pokémon's placeholders.");
+			}
+			return builder;
+		}).map(builder -> builder.author("happyzlife").version(VERSION)).forEach(builder -> {
+			try {
+				builder.buildAndRegister();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		});
 		
 		/*LOGGER.info("Registering Seen Counter");
 		Pixelmon.EVENT_BUS.register(new SeenEvent());*/
