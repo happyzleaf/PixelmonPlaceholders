@@ -11,10 +11,7 @@ import com.pixelmonmod.pixelmon.enums.EnumPokemon;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.storage.PixelmonStorage;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
-import me.rojo8399.placeholderapi.Listening;
-import me.rojo8399.placeholderapi.Placeholder;
-import me.rojo8399.placeholderapi.Source;
-import me.rojo8399.placeholderapi.Token;
+import me.rojo8399.placeholderapi.*;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -26,7 +23,7 @@ import java.util.Optional;
 @Listening
 public class Placeholders {
 	@Placeholder(id = "trainer")
-	public Object trainer(@Source Player player, @Token String token) {
+	public Object trainer(@Source Player player, @Token String token) throws NoValueException {
 		Optional<PlayerStorage> optStorage = PixelmonStorage.pokeBallManager.getPlayerStorage((EntityPlayerMP) player);
 		if (optStorage.isPresent()) {
 			PlayerStorage storage = optStorage.get();
@@ -69,7 +66,7 @@ public class Placeholders {
 						try {
 							EntityPixelmon pokemon = storage.getPokemon(storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), (World) player.getWorld());
 							if (pokemon == null) {
-								return null;
+								throw new NoValueException();
 							}
 							
 							if (pokeValues.length >= 2) {
@@ -170,10 +167,10 @@ public class Placeholders {
 										break;
 									case "ball":
 										return pokemon.caughtBall.name();
-										//Since 1.2.0
-									case "drops":
-										return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
-									case "nature": //Not tested but won't cause problems probably
+									//Since 1.2.0
+									//case "possibledrops":
+									//	return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
+									case "nature":
 										return pokemon.getNature();
 								}
 							}
@@ -185,22 +182,22 @@ public class Placeholders {
 					break;
 			}
 		}
-		return null;
+		throw new NoValueException();
 	}
 	
 	@Placeholder(id = "pixelmon")
-	public Object pixelmon(@Source Player player, @Token String token) {
+	public Object pixelmon(@Source Player player, @Token String token) throws NoValueException {
 		switch (token) {
 			case "dexsize":
 				return EnumPokemon.values().length;
 			case "dexsizeall":
 				return Pokedex.pokedexSize;
 		}
-		return null;
+		throw new NoValueException();
 	}
 	
 	@Placeholder(id = "pokedex")
-	public Object pokedex(@Source Player player, @Token String token) {
+	public Object pokedex(@Source Player player, @Token String token) throws NoValueException {
 		String[] values = token.split("_");
 		if (values.length >= 1) {
 			EnumPokemon pokemon = null;
@@ -218,6 +215,6 @@ public class Placeholders {
 				return ParserUtility.parsePokedexInfo(pokemon, values);
 			}
 		}
-		return null;
+		throw new NoValueException();
 	}
 }

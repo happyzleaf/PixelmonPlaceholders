@@ -62,7 +62,8 @@ repositories {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:5.1.0'
-    compile 'com.github.rojo8399:PlaceholderAPI:v4.1'
+    //Importing v4.2 from /libs/ because of this https://github.com/rojo8399/PlaceholderAPI/issues/39
+    //compile 'com.github.rojo8399:PlaceholderAPI:v4.1'
 }
 
 processResources {

@@ -6,12 +6,11 @@ import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
-import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
-import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Stats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.*;
 import com.pixelmonmod.pixelmon.enums.EnumEvolutionRock;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
 import com.pixelmonmod.pixelmon.items.ItemHeld;
+import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
@@ -29,7 +28,7 @@ import java.util.HashMap;
  * Copyright (c). All rights reserved.
  ***************************************/
 public class ParserUtility {
-	public static Object parsePokedexInfo(EnumPokemon pokemon, String[] values) {
+	public static Object parsePokedexInfo(EnumPokemon pokemon, String[] values) throws NoValueException {
 		if (values.length == 1) {
 			return pokemon.name;
 		}
@@ -60,7 +59,7 @@ public class ParserUtility {
 							rarity = stats.rarity.dawndusk;
 							break;
 						default:
-							return null;
+							throw new NoValueException();
 					}
 					return rarity <= 0 ? EnumPokemon.legendaries.contains(pokemon.name) ? 0 : 1 : rarity;
 				}
@@ -91,8 +90,9 @@ public class ParserUtility {
 			case "evolutiontype":
 				if (stats.evolutions.length > 0) {
 					return stats.evolutions[0].data.getType();
+				} else {
+					return "Does not evolve.";
 				}
-				break;
 			case "evolution":
 				if (values.length >= 3 && stats.evolutions.length > 0) {
 					IEvolutionData evol = stats.evolutions[0].data;
@@ -113,7 +113,7 @@ public class ParserUtility {
 							} else {
 								return "Cannot evolve by stone.";
 							}
-						case "friendship":
+						case "friendship": //TODO test
 							if (evol instanceof EvolutionFriendship) {
 								if (values.length == 4) {
 									EvolutionFriendship friendship = (EvolutionFriendship) evol;
@@ -224,11 +224,12 @@ public class ParserUtility {
 										return yield.SpecialDefence;
 									case "spe":
 										return yield.Speed;
-									case "total":
-										return yield.HP + yield.Attack + yield.Defence + yield.SpecialAttack + yield.SpecialDefence + yield.Speed;
 								}
 							}
 							break;
+						case "yields":
+							EVsStore yield = stats.evGain;
+							return yield.HP + yield.Attack + yield.Defence + yield.SpecialAttack + yield.SpecialDefence + yield.Speed;
 					}
 				}
 				break;
@@ -248,10 +249,10 @@ public class ParserUtility {
 					}
 				}
 				break;
-			case "egggroup":
+			case "egggroups":
 				return asReadableList(values, 2, stats.eggGroups);
 		}
-		return null;
+		throw new NoValueException();
 	}
 	
 	/**
