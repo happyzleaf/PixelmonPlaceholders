@@ -1,15 +1,15 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
+import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.database.DatabaseMoves;
 import com.pixelmonmod.pixelmon.database.DatabaseStats;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
-import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.*;
-import com.pixelmonmod.pixelmon.enums.EnumEvolutionRock;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
-import com.pixelmonmod.pixelmon.items.ItemHeld;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.biome.Biome;
@@ -19,6 +19,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /***************************************
  * PixelmonPlaceholders
@@ -65,11 +67,11 @@ public class ParserUtility {
 				}
 				break;
 			case "postevolutions":
-				return asReadableList(values, 2, Arrays.stream(stats.evolutions).map(evolution -> evolution.evolveInto.name).toArray());
+				return asReadableList(values, 2, Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray());
 			case "preevolutions":
 				return asReadableList(values, 2, stats.preEvolutions);
 			case "evolutions":
-				return asReadableList(values, 2, ArrayUtils.addAll(ArrayUtils.add(Arrays.stream(stats.evolutions).map(evolution -> evolution.evolveInto.name).toArray(), pokemon.name), stats.preEvolutions));
+				return asReadableList(values, 2, ArrayUtils.addAll(ArrayUtils.add(Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray(), pokemon.name), stats.preEvolutions));
 			case "ability":
 				if (values.length == 3) {
 					String value1 = values[2];
@@ -87,107 +89,30 @@ public class ParserUtility {
 				return asReadableList(values, 2, Arrays.stream(stats.biomeIDs).map(id -> Biome.getBiome(id).getBiomeName()).toArray());
 			case "spawnlocations":
 				return asReadableList(values, 2, stats.spawnLocations);
-			case "evolutiontype":
-				if (stats.evolutions.length > 0) {
-					return stats.evolutions[0].data.getType();
-				} else {
-					return "Does not evolve.";
-				}
-			case "evolution":
-				if (values.length >= 3 && stats.evolutions.length > 0) {
-					IEvolutionData evol = stats.evolutions[0].data;
-					switch (values[2]) {
-						case "bystone":
-							if (evol instanceof EvolutionByStone) {
-								if (values.length == 4) {
-									EvolutionByStone stone = (EvolutionByStone) evol;
-									switch (values[3]) {
-										case "stone":
-											return ReflectionHelper.getPrivateValue(EvolutionByStone.class, stone, "stone");
-										case "specificgender":
-											return ReflectionHelper.getPrivateValue(EvolutionByStone.class, stone, "evolveByGender");
-										case "gender":
-											return ReflectionHelper.getPrivateValue(EvolutionByStone.class, stone, "male") ? "Male" : "Female";
-									}
+			case "doesevolve": //1.2.2
+				return stats.evolutions.length != 0;
+			case "evolutionscount": //1.2.2
+				return stats.evolutions.length;
+			case "evolution": //Modified in 1.2.2
+				if (values.length >= 3) {
+					int evolution = Integer.parseInt(values[2]) - 1;
+					if (stats.evolutions.length <= evolution) {
+						return "Does not evolve.";
+					} else {
+						Evolution evol = stats.evolutions[evolution];
+						if (values.length < 4) {
+							return stats.evolutions[evolution].to.name;
+						} else { //Drastically changed since 1.3.0
+							EvoParser parser = evoParsers.get(values[4]);
+							EvoCondition cond = null;
+							for (EvoCondition c : evol.conditions) {
+								if (c.getClass().equals(parser.clazz)) {
+									cond = c;
 								}
-							} else {
-								return "Cannot evolve by stone.";
 							}
-						case "friendship": //TODO test
-							if (evol instanceof EvolutionFriendship) {
-								if (values.length == 4) {
-									EvolutionFriendship friendship = (EvolutionFriendship) evol;
-									switch (values[3]) {
-										case "specifictime":
-											return ReflectionHelper.getPrivateValue(EvolutionFriendship.class, friendship, "hasCondition");
-										case "time":
-											return ReflectionHelper.getPrivateValue(EvolutionFriendship.class, friendship, "condition");
-									}
-								}
-							} else {
-								return "Cannot evolve by friendship.";
-							}
-							break;
-						case "level":
-							if (evol instanceof EvolutionLevel) {
-								if (values.length == 4) {
-									EvolutionLevel level = (EvolutionLevel) evol;
-									switch (values[3]) {
-										case "specificlevel":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "hasEvolveLevel");
-										case "level":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "evolveLevel");
-										case "specificbiomes":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "biomeCondition");
-										case "biome":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "biome");
-										case "specificgender":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "hasGenderCondition");
-										case "gender":
-											return ReflectionHelper.getPrivateValue(EvolutionLevel.class, level, "gender");
-									}
-								}
-							} else {
-								return "Cannot evolve by level.";
-							}
-							break;
-						case "move":
-							if (evol instanceof EvolutionMove) {
-								return DatabaseMoves.getAttack(ReflectionHelper.getPrivateValue(EvolutionMove.class, (EvolutionMove) evol, "moveIndex"));
-							} else {
-								return "Cannot evolve by move.";
-							}
-						case "proximity":
-							if (evol instanceof EvolutionProximity) {
-								if (values.length == 4) {
-									EvolutionProximity proximity = (EvolutionProximity) evol;
-									EnumEvolutionRock rock = ReflectionHelper.getPrivateValue(EvolutionProximity.class, proximity, "rock");
-									switch (values[3]) {
-										case "rock":
-											return rock;
-										case "biomes":
-											asReadableList(values, 4, Arrays.stream(rock.biomes).map(Biome::getBiomeName).toArray());
-									}
-								}
-							} else {
-								return "Cannot evolve by proximity to rock.";
-							}
-							break;
-						case "trade":
-							if (evol instanceof EvolutionTrade) {
-								if (values.length == 4) {
-									EvolutionTrade trade = (EvolutionTrade) evol;
-									switch(values[3]) {
-										case "specificitem":
-											return ReflectionHelper.getPrivateValue(EvolutionTrade.class, trade, "hasItemCondition");
-										case "item":
-											return ((ItemHeld) ReflectionHelper.getPrivateValue(EvolutionTrade.class, trade, "item")).getLocalizedName();
-									}
-								}
-							} else {
-								return "Cannot evolve by trade.";
-							}
-							break;
+							if (cond == null) throw new NoValueException();
+							return parser.parse(cond, values, 5);
+						}
 					}
 				}
 				break;
@@ -237,27 +162,33 @@ public class ParserUtility {
 				if (values.length >= 3) {
 					HashMap<EnumPokemon, PokemonDropInformation> pokemonDrops = ReflectionHelper.getPrivateValue(DropItemRegistry.class, null, "pokemonDrops");
 					PokemonDropInformation drops = pokemonDrops.get(pokemon);
-					switch (values[2]) {
-						case "main":
-							return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "mainDrop"));
-						case "rare":
-							return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "rareDrop"));
-						case "optional1":
-							return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop1"));
-						case "optional2":
-							return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop2"));
+					if (drops == null) {
+						return "None";
+					} else {
+						switch (values[2]) {
+							case "main":
+								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "mainDrop"));
+							case "rare":
+								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "rareDrop"));
+							case "optional1":
+								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop1"));
+							case "optional2":
+								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop2"));
+						}
 					}
 				}
 				break;
 			case "egggroups":
 				return asReadableList(values, 2, stats.eggGroups);
+			case "texturelocation": //Since 1.2.3
+				return "pixelmon:sprites/pokemon/" + String.format("%03d", stats.nationalPokedexNumber);
 		}
 		throw new NoValueException();
 	}
 	
 	/**
 	 * @param values
-	 * @param index  the index in the array values where the method should start
+	 * @param index The index in the array values where the method should start
 	 * @param data
 	 * @return
 	 */
@@ -292,6 +223,122 @@ public class ParserUtility {
 	}
 	
 	public static String getItemStackInfo(@Nullable ItemStack is) {
-		return is == null || is.stackSize == 0 ? "None" : is.stackSize + " " + is.getDisplayName();
+		return is == null || is.getCount() == 0 ? "None" : is.getCount() + " " + is.getDisplayName();
+	}
+	
+	/*
+		TODO normalize function
+		takes a string and returns the human-readable version of it
+		MossyRock => Mossy Rock
+		CLEAR => Clear
+	 */
+	
+	//Please stop yelling at me, Sandy, not in front of our children!
+	private static Map<String, EvoParser> evoParsers = new HashMap<>();
+	static {
+		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
+			@Override
+			public Object parse(BiomeCondition condition, String[] values, int index) {
+				return asReadableList(values, index, condition.biomes.stream().map(Biome::getBiomeName).toArray());
+			}
+		});
+		evoParsers.put("chance", new EvoParser<ChanceCondition>(ChanceCondition.class) {
+			@Override
+			public Object parse(ChanceCondition condition, String[] values, int index) {
+				return condition.chance;
+			}
+		});
+		evoParsers.put("stone", new EvoParser<EvoRockCondition>(EvoRockCondition.class) {
+			@Override
+			public Object parse(EvoRockCondition condition, String[] values, int index) throws NoValueException {
+				if (values[index + 1].equals("biome")) {
+					if (values.length > index + 1) {
+						return asReadableList(values, index + 1, Arrays.stream(condition.evoRock.biomes).map(Biome::getBiomeName).toArray());
+					} else {
+						throw new NoValueException();
+					}
+				}
+				return condition.evoRock;
+			}
+		});
+		evoParsers.put("friendship", new EvoParser<FriendshipCondition>(FriendshipCondition.class) {
+			@Override
+			public Object parse(FriendshipCondition condition, String[] values, int index) {
+				return ReflectionHelper.getPrivateValue(FriendshipCondition.class, condition, "friendship");
+			}
+		});
+		evoParsers.put("gender", new EvoParser<GenderCondition>(GenderCondition.class) {
+			@Override
+			public Object parse(GenderCondition condition, String[] values, int index) {
+				return asReadableList(values, index, condition.genders.toArray());
+			}
+		});
+		evoParsers.put("helditem", new EvoParser<HeldItemCondition>(HeldItemCondition.class) {
+			@Override
+			public Object parse(HeldItemCondition condition, String[] values, int index) {
+				return condition.item.getLocalizedName();
+			}
+		});
+		evoParsers.put("altitude", new EvoParser<HighAltitudeCondition>(HighAltitudeCondition.class) {
+			@Override
+			public Object parse(HighAltitudeCondition condition, String[] values, int index) {
+				return condition.minAltitude;
+			}
+		});
+		evoParsers.put("level", new EvoParser<LevelCondition>(LevelCondition.class) {
+			@Override
+			public Object parse(LevelCondition condition, String[] values, int index) {
+				return ReflectionHelper.getPrivateValue(LevelCondition.class, condition, "level");
+			}
+		});
+		evoParsers.put("move", new EvoParser<MoveCondition>(MoveCondition.class) {
+			@Override
+			public Object parse(MoveCondition condition, String[] values, int index) {
+				return DatabaseMoves.getAttack(condition.attackIndex);
+			}
+		});
+		evoParsers.put("movetype", new EvoParser<MoveTypeCondition>(MoveTypeCondition.class) {
+			@Override
+			public Object parse(MoveTypeCondition condition, String[] values, int index) {
+				return ReflectionHelper.getPrivateValue(MoveTypeCondition.class, condition, "type");
+			}
+		});
+		evoParsers.put("party", new EvoParser<PartyCondition>(PartyCondition.class) {
+			@Override
+			public Object parse(PartyCondition condition, String[] values, int index) throws NoValueException {
+				if (values.length > index + 1) {
+					if (values[index + 1].equals("pokemon")) {
+						return asReadableList(values, index + 2, condition.withPokemon.toArray());
+					} else if (values[index + 1].equals("type")) {
+						return asReadableList(values, index + 2, condition.withTypes.toArray());
+					}
+				}
+				throw new NoValueException();
+			}
+		});
+		//TODO StatRatioCondition
+		evoParsers.put("time", new EvoParser<TimeCondition>(TimeCondition.class) {
+			@Override
+			public Object parse(TimeCondition condition, String[] values, int index) {
+				return condition.day ? "Day" : "Night";
+			}
+		});
+		evoParsers.put("weather", new EvoParser<WeatherCondition>(WeatherCondition.class) {
+			@Override
+			public Object parse(WeatherCondition condition, String[] values, int index) {
+				String w = ((WeatherType) ReflectionHelper.getPrivateValue(WeatherCondition.class, condition, "weather")).name();
+				return w.substring(1) + w.substring(1, w.length() - 1);
+			}
+		});
+	}
+	
+	public static abstract class EvoParser<T extends EvoCondition> {
+		public Class<T> clazz;
+		
+		public EvoParser(Class<T> clazz) {
+			this.clazz = clazz;
+		}
+		
+		public abstract Object parse(T condition, String[] values, int index) throws NoValueException;
 	}
 }

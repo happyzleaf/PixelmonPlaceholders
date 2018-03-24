@@ -10,7 +10,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath "net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT"
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
         classpath "gradle.plugin.org.spongepowered:spongegradle:0.6"
         classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.0'
     }
@@ -19,14 +19,6 @@ buildscript {
 plugins {
     id "com.qixalite.spongestart" version "1.6.2"
     id "java"
-}
-
-allprojects {
-    repositories {
-        maven {
-            url 'https://jitpack.io'
-        }
-    }
 }
 
 
@@ -56,14 +48,16 @@ repositories {
     maven {
         url 'https://repo.spongepowered.org/maven/'
     }
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 
 
 dependencies {
     compile 'org.spongepowered:spongeapi:5.1.0'
-    //Importing v4.2 from /libs/ because of this https://github.com/rojo8399/PlaceholderAPI/issues/39
-    //compile 'com.github.rojo8399:PlaceholderAPI:v4.1'
+    compile 'com.github.rojo8399:PlaceholderAPI:4.4'
 }
 
 processResources {

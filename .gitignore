@@ -1,6 +1,6 @@
 .idea
 .gradle
-.iml
+*.iml
 out
 build
 libs

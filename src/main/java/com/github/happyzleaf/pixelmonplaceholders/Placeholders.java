@@ -1,7 +1,6 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
 import com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility;
-import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
@@ -69,6 +68,10 @@ public class Placeholders {
 								throw new NoValueException();
 							}
 							
+							if (pokemon.isEgg && PPConfig.disableEggInfo) {
+								throw new NoValueException();
+							}
+							
 							if (pokeValues.length >= 2) {
 								switch (pokeValues[1]) {
 									case "nickname":
@@ -111,6 +114,15 @@ public class Placeholders {
 																return ivs.SpDef;
 															case "spe":
 																return ivs.Speed;
+															case "total": //since 1.2.3
+																return ivs.HP + ivs.Attack + ivs.Defence + ivs.SpAtt + ivs.SpDef + ivs.Speed;
+															case "totalpercentage":
+																String result3 = "" + (ivs.HP + ivs.Attack + ivs.Defence + ivs.SpAtt + ivs.SpDef + ivs.Speed) * 100 / 186;
+																if (result3.substring(result3.indexOf(".") + 1).length() == 1) {
+																	return result3.substring(0, result3.length() - 2);
+																} else {
+																	return result3.substring(0, result3.indexOf(".") + 3);
+																}
 														}
 													}
 													break;
@@ -130,6 +142,15 @@ public class Placeholders {
 																return evs.SpecialDefence;
 															case "spe":
 																return evs.Speed;
+															case "total": //since 1.2.3
+																return evs.HP + evs.Attack + evs.Defence + evs.SpecialAttack + evs.SpecialDefence + evs.Speed;
+															case "totalpercentage":
+																String result4 = "" + (evs.HP + evs.Attack + evs.Defence + evs.SpecialAttack + evs.SpecialDefence + evs.Speed) / 510;
+																if (result4.substring(result4.indexOf(".") + 1).length() == 1) {
+																	return result4.substring(0, result4.length() - 2);
+																} else {
+																	return result4.substring(0, result4.indexOf(".") + 3);
+																}
 														}
 													}
 													break;
@@ -172,6 +193,12 @@ public class Placeholders {
 									//	return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
 									case "nature":
 										return pokemon.getNature();
+									case "gender": //since 1.2.3
+										return pokemon.gender.name();
+									case "growth":
+										return pokemon.getGrowth().name();
+									case "shiny": //Since 1.4.0
+										return pokemon.getIsShiny();
 								}
 							}
 							
