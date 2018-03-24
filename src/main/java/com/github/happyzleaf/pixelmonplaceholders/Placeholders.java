@@ -1,6 +1,5 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
-import com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
@@ -15,9 +14,12 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.util.Arrays;
 import java.util.Optional;
+
+import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
 
 @Listening
 public class Placeholders {
@@ -58,7 +60,7 @@ public class Placeholders {
 						return String.valueOf(result2).substring(0, String.valueOf(result2).indexOf(".") + 3);
 					}
 				case "balance":
-					return ParserUtility.formatBigNumbers(storage.getCurrency());
+					return formatBigNumbers(storage.getCurrency());
 				case "team":
 					if (values.length > 1) {
 						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
@@ -69,7 +71,7 @@ public class Placeholders {
 							}
 							
 							if (pokemon.isEgg && PPConfig.disableEggInfo) {
-								throw new NoValueException();
+								return TextSerializers.FORMATTING_CODE.deserialize(PPConfig.disabledEggMessage);
 							}
 							
 							if (pokeValues.length >= 2) {
@@ -77,11 +79,11 @@ public class Placeholders {
 									case "nickname":
 										return pokemon.hasNickname() ? pokemon.getNickname() : pokemon.getName();
 									case "exp":
-										return ParserUtility.formatBigNumbers(pokemon.getLvl().getExp());
+										return formatBigNumbers(pokemon.getLvl().getExp());
 									case "level":
 										return pokemon.getLvl().getLevel();
 									case "exptolevelup":
-										return ParserUtility.formatBigNumbers(pokemon.getLvl().getExpForNextLevelClient());
+										return formatBigNumbers(pokemon.getLvl().getExpForNextLevelClient());
 									case "stats":
 										if (pokeValues.length >= 3) {
 											Stats stats = pokemon.stats;
@@ -177,12 +179,12 @@ public class Placeholders {
 										try {
 											return moveset.get(Integer.parseInt(pokeValues[2]) - 1);
 										} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-											return ParserUtility.asReadableList(pokeValues, 2, moveset.attacks);
+											return asReadableList(pokeValues, 2, moveset.attacks);
 										}
 									case "friendship":
-										return ParserUtility.formatBigNumbers(pokemon.friendship.getFriendship());
+										return formatBigNumbers(pokemon.friendship.getFriendship());
 									case "ability":
-										if (pokeValues.length == 2) {
+										if (pokeValues.length == 2) { //why did i put this check here? UPDATE: Ohhh yeah so it is reflected over the generic placeholders
 											return pokemon.getAbility().getName();
 										}
 										break;
@@ -190,21 +192,20 @@ public class Placeholders {
 										return pokemon.caughtBall.name();
 									//Since 1.2.0
 									//case "possibledrops":
-									//	return ParserUtility.asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
+									//	return asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
 									case "nature":
 										return pokemon.getNature();
 									case "gender": //since 1.2.3
-										return pokemon.gender.name();
+										return pokemon.getGender().name();
 									case "growth":
 										return pokemon.getGrowth().name();
-									case "shiny": //Since 1.4.0
+									case "shiny": //Since 1.3.0
 										return pokemon.getIsShiny();
 								}
 							}
 							
-							return ParserUtility.parsePokedexInfo(EnumPokemon.getFromNameAnyCase(pokemon.getPokemonName()), pokeValues);
-						} catch (NumberFormatException ignored) {
-						}
+							return parsePokedexInfo(EnumPokemon.getFromNameAnyCase(pokemon.getPokemonName()), pokeValues);
+						} catch (NumberFormatException ignored) {}
 					}
 					break;
 			}
@@ -239,7 +240,7 @@ public class Placeholders {
 			}
 			
 			if (pokemon != null) {
-				return ParserUtility.parsePokedexInfo(pokemon, values);
+				return parsePokedexInfo(pokemon, values);
 			}
 		}
 		throw new NoValueException();

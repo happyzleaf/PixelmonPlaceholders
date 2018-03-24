@@ -111,6 +111,7 @@ public class ParserUtility {
 								}
 							}
 							if (cond == null) throw new NoValueException();
+							//noinspection unchecked
 							return parser.parse(cond, values, 5);
 						}
 					}
