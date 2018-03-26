@@ -15,6 +15,8 @@ public class PPConfig {
 	public static Text disabledEggText;
 	private static String entityNotFoundMessage = "";
 	public static Text entityNotFoundText;
+	private static String evolutionNotAvailableMessage = "&cThe pokémon does not evolve with that condition.";
+	public static Text evolutionNotAvailableText;
 	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
@@ -40,6 +42,8 @@ public class PPConfig {
 		disabledEggText = TextSerializers.FORMATTING_CODE.deserialize(disabledEggMessage);
 		entityNotFoundMessage = miscellaneous.getNode("entityNotFoundMessage").getString();
 		entityNotFoundText = TextSerializers.FORMATTING_CODE.deserialize(entityNotFoundMessage);
+		evolutionNotAvailableMessage = miscellaneous.getNode("evolutionNotAvailableMessage").getString();
+		evolutionNotAvailableText = TextSerializers.FORMATTING_CODE.deserialize(evolutionNotAvailableMessage);
 	}
 	
 	public static void saveConfig() {
@@ -49,6 +53,7 @@ public class PPConfig {
 		miscellaneous.getNode("disableEggInfo").setValue(disableEggInfo);
 		miscellaneous.getNode("disabledEggMessage").setValue(disabledEggMessage);
 		miscellaneous.getNode("entityNotFoundMessage").setValue(entityNotFoundMessage);
+		miscellaneous.getNode("evolutionNotAvailableMessage").setValue(evolutionNotAvailableMessage);
 		
 		save();
 	}

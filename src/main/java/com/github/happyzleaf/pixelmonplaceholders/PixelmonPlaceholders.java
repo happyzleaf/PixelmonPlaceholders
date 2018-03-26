@@ -10,8 +10,8 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
+import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
-import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 
@@ -25,7 +25,7 @@ import java.io.File;
  * Copyright (c). All rights reserved.
  ***************************************/
 @Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, description = "Pixelmon Placeholders", version = PixelmonPlaceholders.VERSION,
-		url = "https://github.com/happyzleaf/PixelmonPlaceholders", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon"), @Dependency(id = "placeholderapi", version = "[4.2,)")})
+		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon"), @Dependency(id = "placeholderapi", version = "[4.4,)")})
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "zpixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
@@ -47,9 +47,7 @@ public class PixelmonPlaceholders {
 	}
 	
 	@Listener
-	public void onServerStart(GameStartingServerEvent event) {
-		LOGGER.info("Registering Pixelmon Placeholders.");
-		
+	public void onGamePostInitialization(GamePostInitializationEvent event) {
 		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), this).stream().map(builder -> {
 			switch (builder.getId()) {
 				case "trainer":

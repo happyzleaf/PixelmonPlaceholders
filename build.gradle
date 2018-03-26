@@ -11,20 +11,17 @@ buildscript {
     }
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
-        classpath "gradle.plugin.org.spongepowered:spongegradle:0.6"
-        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.0'
+        classpath "gradle.plugin.org.spongepowered:spongegradle:0.8"
     }
 }
 
 plugins {
-    id "com.qixalite.spongestart" version "1.6.2"
     id "java"
 }
 
 
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: "org.spongepowered.plugin"
-apply plugin: 'com.github.johnrengelman.shadow'
 
 version = modVersion
 group = modGroup
@@ -41,6 +38,8 @@ minecraft {
     // simply re-run your setup task after changing the mappings to update your workspace.
     mappings = project.mcpVersion
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+
+    useDepAts = true
 }
 
 repositories {
@@ -53,10 +52,8 @@ repositories {
     }
 }
 
-
-
 dependencies {
-    compile 'org.spongepowered:spongeapi:5.1.0'
+    compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
     compile 'com.github.rojo8399:PlaceholderAPI:4.4'
 }
 
@@ -77,13 +74,12 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         exclude "mcmod.info"
     }
+
+    rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
-spongestart {
-    eula true
-
-    minecraft '1.10.2'
-    type 'bleeding'
-    spongeForgeVersion '1.10.2-2281-5.2.0-BETA-2353'
-    spongeVanillaVersion '1.10.2-5.2.0-BETA-385'
+jar {
+    manifest {
+        attributes 'FMLAT': 'zpixelmonplaceholders_at.cfg'
+    }
 }

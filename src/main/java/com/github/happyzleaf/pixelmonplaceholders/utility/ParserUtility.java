@@ -1,5 +1,6 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
+import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.database.DatabaseMoves;
 import com.pixelmonmod.pixelmon.database.DatabaseStats;
@@ -10,14 +11,16 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.*;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
+import com.pixelmonmod.pixelmon.storage.PlayerStorage;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.apache.commons.lang3.ArrayUtils;
+import org.spongepowered.api.entity.living.player.Player;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +33,38 @@ import java.util.Map;
  * Copyright (c). All rights reserved.
  ***************************************/
 public class ParserUtility {
+	private static HashMap<EnumPokemon, PokemonDropInformation> pokemonDrops;
+	private static Field mainDrop, rareDrop, optDrop1, optDrop2;
+	private static Field friendship, level, type, weather;
+	
+	static {
+		try {
+			Field pokemonDropsField = DropItemRegistry.class.getDeclaredField("pokemonDrops");
+			pokemonDropsField.setAccessible(true);
+			pokemonDrops = (HashMap<EnumPokemon, PokemonDropInformation>) pokemonDropsField.get(null);
+			mainDrop = PokemonDropInformation.class.getDeclaredField("mainDrop");
+			mainDrop.setAccessible(true);
+			rareDrop = PokemonDropInformation.class.getDeclaredField("rareDrop");
+			rareDrop.setAccessible(true);
+			optDrop1 = PokemonDropInformation.class.getDeclaredField("optDrop1");
+			optDrop1.setAccessible(true);
+			optDrop2 = PokemonDropInformation.class.getDeclaredField("optDrop2");
+			optDrop2.setAccessible(true);
+			
+			friendship = FriendshipCondition.class.getDeclaredField("friendship");
+			friendship.setAccessible(true);
+			level = LevelCondition.class.getDeclaredField("level");
+			level.setAccessible(true);
+			type = MoveTypeCondition.class.getDeclaredField("type");
+			type.setAccessible(true);
+			weather = WeatherCondition.class.getDeclaredField("weather");
+			weather.setAccessible(true);
+			
+		} catch (IllegalAccessException | NoSuchFieldException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static Object parsePokedexInfo(EnumPokemon pokemon, String[] values) throws NoValueException {
 		if (values.length == 1) {
 			return pokemon.name;
@@ -67,11 +102,23 @@ public class ParserUtility {
 				}
 				break;
 			case "postevolutions":
+				/*
+				 * "postevolutions" does not work how you might think.
+				 * The post evolution of Bulbasaur is only Ivysaur, while the post evolutions of Eevee are all the eevolutions.
+				 * The problem is that even if i'd like to add Venusaur to the post evolutions of Bulbasaur, after Ivysaur,
+				 * i can't know it programmatically without doing any kind of human sacrifice,
+				 * and i wound't know if i'd have to add them (the evolutions of an evolution) only if the post evolutions is one or so,
+				 * cause, even if i'm sure that Umbreon does not have a post evolution,
+				 * i'm putting a big limit to the OOP which should work regardless of the poke.
+				 *
+				 * Yeah, i'm sure no one will understand what i've wrote, but don't worry, i'm the choosen, i'm gonna fix it myself and you won't even notice.
+				 */
 				return asReadableList(values, 2, Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray());
 			case "preevolutions":
 				return asReadableList(values, 2, stats.preEvolutions);
-			case "evolutions":
-				return asReadableList(values, 2, ArrayUtils.addAll(ArrayUtils.add(Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray(), pokemon.name), stats.preEvolutions));
+			case "evolutions": //Evolutions in order since 1.3.0
+				//WHAT AM I DOING
+				return asReadableList(values, 2, ArrayUtils.addAll(ArrayUtils.add(ArrayUtils.addAll(new Object[]{}, stats.preEvolutions), pokemon.name), Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray()));
 			case "ability":
 				if (values.length == 3) {
 					String value1 = values[2];
@@ -95,7 +142,12 @@ public class ParserUtility {
 				return stats.evolutions.length;
 			case "evolution": //Modified in 1.2.2
 				if (values.length >= 3) {
-					int evolution = Integer.parseInt(values[2]) - 1;
+					int evolution;
+					try {
+						evolution = Integer.parseInt(values[2]) - 1;
+					} catch (NumberFormatException e) {
+						throw new NoValueException();
+					}
 					if (stats.evolutions.length <= evolution) {
 						return "Does not evolve.";
 					} else {
@@ -103,16 +155,27 @@ public class ParserUtility {
 						if (values.length < 4) {
 							return stats.evolutions[evolution].to.name;
 						} else { //Drastically changed since 1.3.0
-							EvoParser parser = evoParsers.get(values[4]);
-							EvoCondition cond = null;
-							for (EvoCondition c : evol.conditions) {
-								if (c.getClass().equals(parser.clazz)) {
-									cond = c;
+							//TODO needs more testing
+							try {
+								EvoParser parser = evoParsers.get(values[3]);
+								if (parser == null) throw new NoValueException();
+								EvoCondition cond = null;
+								System.out.println("evol.conditions.size() = " + evol.conditions.size());
+								for (EvoCondition c : evol.conditions) {
+									if (c.getClass().equals(parser.clazz)) {
+										cond = c;
+									}
 								}
+								if (cond == null) throw new NoValueException();
+								try {
+									//noinspection unchecked
+									return parser.parse(cond, values, 5);
+								} catch (IllegalAccessException e) {
+									e.printStackTrace();
+								}
+							} catch (NoValueException e) {
+								return PPConfig.evolutionNotAvailableText;
 							}
-							if (cond == null) throw new NoValueException();
-							//noinspection unchecked
-							return parser.parse(cond, values, 5);
 						}
 					}
 				}
@@ -159,22 +222,25 @@ public class ParserUtility {
 					}
 				}
 				break;
-			case "drops":
+			case "drops": //To be tested in 1.3.0
 				if (values.length >= 3) {
-					HashMap<EnumPokemon, PokemonDropInformation> pokemonDrops = ReflectionHelper.getPrivateValue(DropItemRegistry.class, null, "pokemonDrops");
 					PokemonDropInformation drops = pokemonDrops.get(pokemon);
 					if (drops == null) {
 						return "None";
 					} else {
-						switch (values[2]) {
-							case "main":
-								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "mainDrop"));
-							case "rare":
-								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "rareDrop"));
-							case "optional1":
-								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop1"));
-							case "optional2":
-								return getItemStackInfo(ReflectionHelper.getPrivateValue(PokemonDropInformation.class, drops, "optDrop2"));
+						try {
+							switch (values[2]) {
+								case "main":
+									return getItemStackInfo((ItemStack) mainDrop.get(drops));
+								case "rare":
+									return getItemStackInfo((ItemStack) rareDrop.get(drops));
+								case "optional1":
+									return getItemStackInfo((ItemStack) optDrop1.get(drops));
+								case "optional2":
+									return getItemStackInfo((ItemStack) optDrop2.get(drops));
+							}
+						} catch (IllegalAccessException e) {
+							e.printStackTrace();
 						}
 					}
 				}
@@ -183,11 +249,28 @@ public class ParserUtility {
 				return asReadableList(values, 2, stats.eggGroups);
 			case "texturelocation": //Since 1.2.3
 				return "pixelmon:sprites/pokemon/" + String.format("%03d", stats.nationalPokedexNumber);
+			//TODO moves/attacks
 		}
 		throw new NoValueException();
 	}
 	
-	public static Object parsePokemonInfo(EntityPixelmon pokemon, String[] values) throws NoValueException {
+	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
+		boolean isSentOut = true; //The nbt "IsInBall" might be incorrect, so we save the real value here, before we load the pixelmon.
+		
+		EntityPixelmon pokemon = storage.getAlreadyExists(id, (World) player.getWorld()).orElse(null);
+		if (pokemon == null) {
+			pokemon = storage.sendOut(id, (World) player.getWorld());
+			isSentOut = false;
+		}
+		
+		if (pokemon == null) {
+			return PPConfig.entityNotFoundText;
+		}
+		
+		if (pokemon.isEgg && PPConfig.disableEggInfo) {
+			return PPConfig.disabledEggText;
+		}
+		
 		if (values.length >= 2) {
 			switch (values[1]) {
 				case "nickname":
@@ -275,16 +358,17 @@ public class ParserUtility {
 					break;
 				case "helditem":
 					return pokemon.heldItem == null ? "None" : pokemon.heldItem.getDisplayName();
-				case "pos":
+				case "pos": //Before 1.3.0: last known position. After: exact pokémon position or player's position if carried in a ball
 					if (values.length >= 3) {
-						BlockPos pos = pokemon.getPosition();
+						//Vector3d pos = isSentOut ? new Vector3d(pokemon.getPosition().getX(), pokemon.getPosition().getY(), pokemon.getPosition().getZ()) : player.getPosition();
 						switch (values[2]) {
 							case "x":
-								return pos.getX();
+								//return pos.getX(); <-- this is way more elegant but i'd like to avoid creating a new vector on every placeholder request
+								return isSentOut ? pokemon.getPosition().getX() : player.getPosition().getX(); //NOTE: This method won't work with 7.0.0!
 							case "y":
-								return pos.getY();
+								return isSentOut ? pokemon.getPosition().getY() : player.getPosition().getY(); //TODO nicely format doubles! Might create a way to format things like i did for lists, but for numbers
 							case "z":
-								return pos.getZ();
+								return isSentOut ? pokemon.getPosition().getZ() : player.getPosition().getZ();
 						}
 					}
 					break;
@@ -374,7 +458,7 @@ public class ParserUtility {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
 			public Object parse(BiomeCondition condition, String[] values, int index) {
-				return asReadableList(values, index, condition.biomes.stream().map(Biome::getBiomeName).toArray());
+				return asReadableList(values, index, condition.biomes.stream().map(biome -> biome.biomeName).toArray());
 			}
 		});
 		evoParsers.put("chance", new EvoParser<ChanceCondition>(ChanceCondition.class) {
@@ -398,8 +482,8 @@ public class ParserUtility {
 		});
 		evoParsers.put("friendship", new EvoParser<FriendshipCondition>(FriendshipCondition.class) {
 			@Override
-			public Object parse(FriendshipCondition condition, String[] values, int index) {
-				return ReflectionHelper.getPrivateValue(FriendshipCondition.class, condition, "friendship");
+			public Object parse(FriendshipCondition condition, String[] values, int index) throws IllegalAccessException {
+				return friendship.get(condition);
 			}
 		});
 		evoParsers.put("gender", new EvoParser<GenderCondition>(GenderCondition.class) {
@@ -422,8 +506,8 @@ public class ParserUtility {
 		});
 		evoParsers.put("level", new EvoParser<LevelCondition>(LevelCondition.class) {
 			@Override
-			public Object parse(LevelCondition condition, String[] values, int index) {
-				return ReflectionHelper.getPrivateValue(LevelCondition.class, condition, "level");
+			public Object parse(LevelCondition condition, String[] values, int index) throws IllegalAccessException {
+				return level.get(condition);
 			}
 		});
 		evoParsers.put("move", new EvoParser<MoveCondition>(MoveCondition.class) {
@@ -434,8 +518,8 @@ public class ParserUtility {
 		});
 		evoParsers.put("movetype", new EvoParser<MoveTypeCondition>(MoveTypeCondition.class) {
 			@Override
-			public Object parse(MoveTypeCondition condition, String[] values, int index) {
-				return ReflectionHelper.getPrivateValue(MoveTypeCondition.class, condition, "type");
+			public Object parse(MoveTypeCondition condition, String[] values, int index) throws IllegalAccessException {
+				return type.get(condition);
 			}
 		});
 		evoParsers.put("party", new EvoParser<PartyCondition>(PartyCondition.class) {
@@ -460,8 +544,8 @@ public class ParserUtility {
 		});
 		evoParsers.put("weather", new EvoParser<WeatherCondition>(WeatherCondition.class) {
 			@Override
-			public Object parse(WeatherCondition condition, String[] values, int index) {
-				String w = ((WeatherType) ReflectionHelper.getPrivateValue(WeatherCondition.class, condition, "weather")).name();
+			public Object parse(WeatherCondition condition, String[] values, int index) throws IllegalAccessException {
+				String w = ((WeatherType) weather.get(condition)).name();
 				return w.substring(1) + w.substring(1, w.length() - 1);
 			}
 		});
@@ -474,6 +558,6 @@ public class ParserUtility {
 			this.clazz = clazz;
 		}
 		
-		public abstract Object parse(T condition, String[] values, int index) throws NoValueException;
+		public abstract Object parse(T condition, String[] values, int index) throws NoValueException, IllegalAccessException;
 	}
 }

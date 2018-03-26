@@ -9,7 +9,6 @@ import me.rojo8399.placeholderapi.*;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -56,20 +55,11 @@ public class Placeholders {
 					}
 				case "balance":
 					return formatBigNumbers(storage.getCurrency());
-				case "team":
+				case "team": //TODO move to %party_[...]%
 					if (values.length > 1) {
 						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
 						try {
-							EntityPixelmon pokemon = storage.getPokemon(storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), (World) player.getWorld());
-							if (pokemon == null) {
-								return PPConfig.entityNotFoundText;
-							}
-							
-							if (pokemon.isEgg && PPConfig.disableEggInfo) {
-								return PPConfig.disabledEggText;
-							}
-							
-							return parsePokemonInfo(pokemon, pokeValues);
+							return parsePokemonInfo(player, storage, storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), pokeValues);
 						} catch (NumberFormatException ignored) {}
 					}
 					break;
