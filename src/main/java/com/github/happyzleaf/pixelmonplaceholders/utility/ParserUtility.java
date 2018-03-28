@@ -2,6 +2,7 @@ package com.github.happyzleaf.pixelmonplaceholders.utility;
 
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
+import com.pixelmonmod.pixelmon.battles.attacks.Attack;
 import com.pixelmonmod.pixelmon.database.DatabaseMoves;
 import com.pixelmonmod.pixelmon.database.DatabaseStats;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
@@ -23,6 +24,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /***************************************
@@ -249,7 +251,21 @@ public class ParserUtility {
 				return asReadableList(values, 2, stats.eggGroups);
 			case "texturelocation": //Since 1.2.3
 				return "pixelmon:sprites/pokemon/" + String.format("%03d", stats.nationalPokedexNumber);
-			//TODO moves/attacks
+			case "move": //Since 1.3.0
+				if (values.length >= 3) {
+					try {
+						List<Attack> attacks = DatabaseMoves.getAllAttacks(stats.nationalPokedexNumber);
+						int attack = Integer.parseInt(values[2]) - 1;
+						if (attack >= 0 && attack < attacks.size()) {
+							return attacks.get(attack);
+						} else {
+							return PPConfig.moveNotAvailableText;
+						}
+					} catch (NumberFormatException ignored) {}
+				}
+				break;
+			case "moves":
+				return asReadableList(values, 2, DatabaseMoves.getAllAttacks(stats.nationalPokedexNumber).stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray());
 		}
 		throw new NoValueException();
 	}
