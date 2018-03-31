@@ -17,11 +17,17 @@ public class PPConfig {
 	private static String entityNotFoundMessage = "";
 	public static Text entityNotFoundText;
 	
-	private static String evolutionNotAvailableMessage = "&cThe pokémon does not evolve with that condition.";
+	private static String evolutionNotAvailableMessage = "&cThe pixelmon does not evolve with that condition.";
 	public static Text evolutionNotAvailableText;
 	
 	private static String moveNotAvailableMessage = "Attack not available.";
 	public static Text moveNotAvailableText;
+	
+	private static String noneMessage = "None";
+	public static Text noneText;
+	
+	public static int maxFractionDigits = 2;
+	public static int minFractionDigits = 0;
 	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
@@ -42,34 +48,38 @@ public class PPConfig {
 		load();
 		
 		ConfigurationNode miscellaneous = node.getNode("miscellaneous");
-		
 		disableEggInfo = miscellaneous.getNode("disableEggInfo").getBoolean();
-		disabledEggMessage = miscellaneous.getNode("disabledEggMessage").getString();
+		maxFractionDigits = miscellaneous.getNode("maxFractionDigits").getInt();
+		minFractionDigits = miscellaneous.getNode("minFractionDigits").getInt();
+		
+		ConfigurationNode messages = node.getNode("messages");
+		disabledEggMessage = messages.getNode("disabledEgg").getString();
+		entityNotFoundMessage = messages.getNode("entityNotFound").getString();
+		evolutionNotAvailableMessage = messages.getNode("evolutionNotAvailable").getString();
+		moveNotAvailableMessage = messages.getNode("moveNotAvailable").getString();
+		noneMessage = messages.getNode("none").getString();
+		
 		disabledEggText = deserialize(disabledEggMessage);
-		
-		entityNotFoundMessage = miscellaneous.getNode("entityNotFoundMessage").getString();
 		entityNotFoundText = deserialize(entityNotFoundMessage);
-		
-		evolutionNotAvailableMessage = miscellaneous.getNode("evolutionNotAvailableMessage").getString();
 		evolutionNotAvailableText = deserialize(evolutionNotAvailableMessage);
-		
-		moveNotAvailableMessage = miscellaneous.getNode("moveNotAvailableMessage").getString();
 		moveNotAvailableText = deserialize(moveNotAvailableMessage);
+		noneText = deserialize(noneMessage);
 	}
 	
 	public static void saveConfig() {
 		load();
 		
 		CommentedConfigurationNode miscellaneous = node.getNode("miscellaneous");
-		
 		miscellaneous.getNode("disableEggInfo").setValue(disableEggInfo);
-		miscellaneous.getNode("disabledEggMessage").setValue(disabledEggMessage);
+		miscellaneous.getNode("maxFractionDigits").setComment("How many digits should be used in decimal values. 2 means 1.12, 3 means 1.123 etc.").setValue(maxFractionDigits);
+		miscellaneous.getNode("minFractionDigits").setComment("The opposite of maxFractionDigits, fills with zeros until there are enough digits. 2 means 1.00, 3 means 1.000 etc.").setValue(minFractionDigits);
 		
-		miscellaneous.getNode("entityNotFoundMessage").setValue(entityNotFoundMessage);
-		
-		miscellaneous.getNode("evolutionNotAvailableMessage").setValue(evolutionNotAvailableMessage);
-		
-		miscellaneous.getNode("moveNotAvailableMessage").setValue(moveNotAvailableMessage);
+		CommentedConfigurationNode messages = node.getNode("messages");
+		messages.getNode("disabledEgg").setValue(disabledEggMessage);
+		messages.getNode("entityNotFound").setValue(entityNotFoundMessage);
+		messages.getNode("evolutionNotAvailable").setValue(evolutionNotAvailableMessage);
+		messages.getNode("moveNotAvailable").setValue(moveNotAvailableMessage);
+		messages.getNode("none").setValue(noneMessage);
 		
 		save();
 	}

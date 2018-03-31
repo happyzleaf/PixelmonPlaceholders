@@ -11,7 +11,9 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.*;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.types.LevelingEvolution;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
+import com.pixelmonmod.pixelmon.enums.EnumType;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
@@ -22,10 +24,8 @@ import org.spongepowered.api.entity.living.player.Player;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.DecimalFormat;
+import java.util.*;
 
 /***************************************
  * PixelmonPlaceholders
@@ -127,7 +127,7 @@ public class ParserUtility {
 					int ability = value1.equals("1") ? 0 : value1.equals("2") ? 1 : value1.equalsIgnoreCase("h") ? 2 : -1;
 					if (ability != -1) {
 						String result = stats.abilities[ability];
-						return result == null ? "None" : result;
+						return result == null ? PPConfig.noneText : result;
 					}
 				}
 				break;
@@ -150,6 +150,9 @@ public class ParserUtility {
 					} catch (NumberFormatException e) {
 						throw new NoValueException();
 					}
+					if (stats.evolutions.length <= 0) {
+						throw new NoValueException();
+					}
 					if (stats.evolutions.length <= evolution) {
 						return "Does not evolve.";
 					} else {
@@ -157,27 +160,47 @@ public class ParserUtility {
 						if (values.length < 4) {
 							return stats.evolutions[evolution].to.name;
 						} else { //Drastically changed since 1.3.0
-							//TODO needs more testing
-							try {
-								EvoParser parser = evoParsers.get(values[3]);
-								if (parser == null) throw new NoValueException();
-								EvoCondition cond = null;
-								System.out.println("evol.conditions.size() = " + evol.conditions.size());
-								for (EvoCondition c : evol.conditions) {
-									if (c.getClass().equals(parser.clazz)) {
-										cond = c;
+							String choice = values[3];
+							if (choice.equals("list")) { //TODO write better
+								List<String> conditions = new ArrayList<>();
+								for (Map.Entry<String, EvoParser> entry : evoParsers.entrySet()) {
+									for (EvoCondition cond : evol.conditions) {
+										if (cond.getClass().equals(entry.getValue().clazz)) {
+											conditions.add(entry.getKey());
+										}
 									}
 								}
-								if (cond == null) throw new NoValueException();
-								try {
-									//noinspection unchecked
-									return parser.parse(cond, values, 5);
-								} catch (IllegalAccessException e) {
-									e.printStackTrace();
+								if (!conditions.contains("level") && evol instanceof LevelingEvolution) {
+									conditions.add("level");
 								}
-							} catch (NoValueException e) {
-								return PPConfig.evolutionNotAvailableText;
+								return asReadableList(values, 4, conditions.toArray());
+							} else {
+								try {
+									EvoParser parser = evoParsers.get(values[3]);
+									if (parser == null) throw new NoValueException();
+									EvoCondition cond = null;
+									for (EvoCondition c : evol.conditions) {
+										if (c.getClass().equals(parser.clazz)) {
+											cond = c;
+										}
+									}
+									if (cond == null) {
+										if (values[3].equals("level") && evol instanceof LevelingEvolution) {
+											return ((LevelingEvolution) evol).level;
+										}
+										throw new NoValueException();
+									}
+									try {
+										//noinspection unchecked
+										return parser.parse(cond, values, 4);
+									} catch (IllegalAccessException e) {
+										e.printStackTrace();
+									}
+								} catch (NoValueException e) {
+									return PPConfig.evolutionNotAvailableText;
+								}
 							}
+							
 						}
 					}
 				}
@@ -224,11 +247,11 @@ public class ParserUtility {
 					}
 				}
 				break;
-			case "drops": //To be tested in 1.3.0
+			case "drops":
 				if (values.length >= 3) {
 					PokemonDropInformation drops = pokemonDrops.get(pokemon);
 					if (drops == null) {
-						return "None";
+						return PPConfig.noneText;
 					} else {
 						try {
 							switch (values[2]) {
@@ -261,7 +284,8 @@ public class ParserUtility {
 						} else {
 							return PPConfig.moveNotAvailableText;
 						}
-					} catch (NumberFormatException ignored) {}
+					} catch (NumberFormatException ignored) {
+					}
 				}
 				break;
 			case "moves":
@@ -373,18 +397,18 @@ public class ParserUtility {
 					}
 					break;
 				case "helditem":
-					return pokemon.heldItem == null ? "None" : pokemon.heldItem.getDisplayName();
+					return pokemon.heldItem == null ? PPConfig.noneText : pokemon.heldItem.getDisplayName();
 				case "pos": //Before 1.3.0: last known position. After: exact pokémon position or player's position if carried in a ball
 					if (values.length >= 3) {
 						//Vector3d pos = isSentOut ? new Vector3d(pokemon.getPosition().getX(), pokemon.getPosition().getY(), pokemon.getPosition().getZ()) : player.getPosition();
 						switch (values[2]) {
 							case "x":
 								//return pos.getX(); <-- this is way more elegant but i'd like to avoid creating a new vector on every placeholder request
-								return isSentOut ? pokemon.getPosition().getX() : player.getPosition().getX(); //NOTE: This method won't work with 7.0.0!
+								return formatDouble(isSentOut ? pokemon.getPosition().getX() : player.getPosition().getX()); //NOTE: This method won't work with 7.0.0!
 							case "y":
-								return isSentOut ? pokemon.getPosition().getY() : player.getPosition().getY(); //TODO nicely format doubles! Might create a way to format things like i did for lists, but for numbers
+								return formatDouble(isSentOut ? pokemon.getPosition().getY() : player.getPosition().getY());
 							case "z":
-								return isSentOut ? pokemon.getPosition().getZ() : player.getPosition().getZ();
+								return formatDouble(isSentOut ? pokemon.getPosition().getZ() : player.getPosition().getZ());
 						}
 					}
 					break;
@@ -402,8 +426,8 @@ public class ParserUtility {
 						return pokemon.getAbility().getName();
 					}
 					break;
-				case "ball":
-					return pokemon.caughtBall.name();
+				case "ball": //Updated 1.3.0: uses localized names
+					return pokemon.caughtBall.getItem().getLocalizedName();
 				//Since 1.2.0
 				//case "possibledrops":
 				//	return asReadableList(pokeValues, 2, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
@@ -423,7 +447,7 @@ public class ParserUtility {
 	
 	/**
 	 * @param values
-	 * @param index The index in the array values where the method should start
+	 * @param index  The index in the array values where the method should start
 	 * @param data
 	 * @return
 	 */
@@ -442,23 +466,34 @@ public class ParserUtility {
 				}
 			}
 		}
-		return list.isEmpty() ? "None" : list;
+		return list.isEmpty() ? PPConfig.noneText : list;
 	}
 	
-	public static Object formatBigNumbers(int number) {
+	public static String formatBigNumbers(int number) {
 		if (number < 1000) {
 			return String.valueOf(number);
 		} else if (number < 1000000) {
-			return String.valueOf((double) Math.round(number/100)/10) + "k";
+			return String.valueOf((double) Math.round(number / 100) / 10) + "k";
 		} else if (number < 1000000000) {
-			return String.valueOf((double) Math.round(number/100000)/10) + "m";
+			return String.valueOf((double) Math.round(number / 100000) / 10) + "m";
 		} else {
-			return String.valueOf((double) Math.round(number/100000000)/10) + "b";
+			return String.valueOf((double) Math.round(number / 100000000) / 10) + "b";
 		}
 	}
 	
-	public static String getItemStackInfo(@Nullable ItemStack is) {
-		return is == null || is.getCount() == 0 ? "None" : is.getCount() + " " + is.getDisplayName();
+	private static DecimalFormat formatter = new DecimalFormat();
+	
+	static {
+		formatter.setMaximumFractionDigits(PPConfig.maxFractionDigits);
+		formatter.setMinimumFractionDigits(PPConfig.minFractionDigits);
+	}
+	
+	public static String formatDouble(double number) {
+		return formatter.format(number);
+	}
+	
+	public static Object getItemStackInfo(@Nullable ItemStack is) {
+		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
 	
 	/*
@@ -468,8 +503,9 @@ public class ParserUtility {
 		CLEAR => Clear
 	 */
 	
-	//Please stop yelling at me, Sandy, not in front of our children!
+	//Please stop yelling at me Sandy! not in front of our children!
 	private static Map<String, EvoParser> evoParsers = new HashMap<>();
+	
 	static {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
@@ -480,15 +516,15 @@ public class ParserUtility {
 		evoParsers.put("chance", new EvoParser<ChanceCondition>(ChanceCondition.class) {
 			@Override
 			public Object parse(ChanceCondition condition, String[] values, int index) {
-				return condition.chance;
+				return formatDouble(condition.chance);
 			}
 		});
 		evoParsers.put("stone", new EvoParser<EvoRockCondition>(EvoRockCondition.class) {
 			@Override
 			public Object parse(EvoRockCondition condition, String[] values, int index) throws NoValueException {
-				if (values[index + 1].equals("biome")) {
-					if (values.length > index + 1) {
-						return asReadableList(values, index + 1, Arrays.stream(condition.evoRock.biomes).map(Biome::getBiomeName).toArray());
+				if (values.length > index) {
+					if (values[index].equals("biome")) {
+						return asReadableList(values, index + 1, Arrays.stream(condition.evoRock.biomes).map(biome -> biome.biomeName).toArray());
 					} else {
 						throw new NoValueException();
 					}
@@ -499,13 +535,14 @@ public class ParserUtility {
 		evoParsers.put("friendship", new EvoParser<FriendshipCondition>(FriendshipCondition.class) {
 			@Override
 			public Object parse(FriendshipCondition condition, String[] values, int index) throws IllegalAccessException {
-				return friendship.get(condition);
+				int f = friendship.getInt(condition);
+				return f == -1 ? 220 : f;
 			}
 		});
 		evoParsers.put("gender", new EvoParser<GenderCondition>(GenderCondition.class) {
 			@Override
 			public Object parse(GenderCondition condition, String[] values, int index) {
-				return asReadableList(values, index, condition.genders.toArray());
+				return asReadableList(values, index, condition.genders/*.stream().filter(gender -> gender != Gender.None)*/.toArray());
 			}
 		});
 		evoParsers.put("helditem", new EvoParser<HeldItemCondition>(HeldItemCondition.class) {
@@ -517,13 +554,13 @@ public class ParserUtility {
 		evoParsers.put("altitude", new EvoParser<HighAltitudeCondition>(HighAltitudeCondition.class) {
 			@Override
 			public Object parse(HighAltitudeCondition condition, String[] values, int index) {
-				return condition.minAltitude;
+				return formatDouble(condition.minAltitude);
 			}
 		});
 		evoParsers.put("level", new EvoParser<LevelCondition>(LevelCondition.class) {
 			@Override
 			public Object parse(LevelCondition condition, String[] values, int index) throws IllegalAccessException {
-				return level.get(condition);
+				return level.getInt(condition);
 			}
 		});
 		evoParsers.put("move", new EvoParser<MoveCondition>(MoveCondition.class) {
@@ -535,17 +572,17 @@ public class ParserUtility {
 		evoParsers.put("movetype", new EvoParser<MoveTypeCondition>(MoveTypeCondition.class) {
 			@Override
 			public Object parse(MoveTypeCondition condition, String[] values, int index) throws IllegalAccessException {
-				return type.get(condition);
+				return ((EnumType) type.get(condition)).getLocalizedName();
 			}
 		});
 		evoParsers.put("party", new EvoParser<PartyCondition>(PartyCondition.class) {
 			@Override
 			public Object parse(PartyCondition condition, String[] values, int index) throws NoValueException {
-				if (values.length > index + 1) {
-					if (values[index + 1].equals("pokemon")) {
-						return asReadableList(values, index + 2, condition.withPokemon.toArray());
-					} else if (values[index + 1].equals("type")) {
-						return asReadableList(values, index + 2, condition.withTypes.toArray());
+				if (values.length > index) {
+					if (values[index].equals("pokemon")) {
+						return asReadableList(values, index + 1, condition.withPokemon.toArray());
+					} else if (values[index].equals("type")) {
+						return asReadableList(values, index + 1, condition.withTypes.toArray());
 					}
 				}
 				throw new NoValueException();
