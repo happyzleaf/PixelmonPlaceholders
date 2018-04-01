@@ -3,10 +3,13 @@ package com.github.happyzleaf.pixelmonplaceholders.utility;
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.battles.attacks.Attack;
+import com.pixelmonmod.pixelmon.config.PixelmonEntityList;
+import com.pixelmonmod.pixelmon.database.DatabaseHelper;
 import com.pixelmonmod.pixelmon.database.DatabaseMoves;
 import com.pixelmonmod.pixelmon.database.DatabaseStats;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
+import com.pixelmonmod.pixelmon.entities.pixelmon.Entity6CanBattle;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.*;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
@@ -20,10 +23,14 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import org.apache.commons.lang3.ArrayUtils;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.*;
 
@@ -274,13 +281,13 @@ public class ParserUtility {
 				return asReadableList(values, 2, stats.eggGroups);
 			case "texturelocation": //Since 1.2.3
 				return "pixelmon:sprites/pokemon/" + String.format("%03d", stats.nationalPokedexNumber);
-			case "move": //Since 1.3.0
+			case "move": //Since 1.3.0 TODO test
 				if (values.length >= 3) {
 					try {
-						List<Attack> attacks = DatabaseMoves.getAllAttacks(stats.nationalPokedexNumber);
+						Object[] attacks = getAllAttackNames(stats);
 						int attack = Integer.parseInt(values[2]) - 1;
-						if (attack >= 0 && attack < attacks.size()) {
-							return attacks.get(attack);
+						if (attack >= 0 && attack < attacks.length) {
+							return attacks[attack];
 						} else {
 							return PPConfig.moveNotAvailableText;
 						}
@@ -288,10 +295,46 @@ public class ParserUtility {
 					}
 				}
 				break;
-			case "moves":
-				return asReadableList(values, 2, DatabaseMoves.getAllAttacks(stats.nationalPokedexNumber).stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray());
+			case "moves": //TODO test
+				return asReadableList(values, 2, getAllAttackNames(stats));
 		}
 		throw new NoValueException();
+	}
+	
+	public static Object[] getAllAttackNames(BaseStats stats) {
+		List<Attack> attacks = DatabaseMoves.getAllAttacks(stats.id);
+		attacks.addAll(DatabaseMoves.getAllTutorAttacks(stats.id));
+		attacks.addAll(getAllEggAttacks(stats));
+		return attacks.stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray();
+	}
+	
+	/**
+	 * TODO TEST
+	 * Slightly mod of another method, but doesn't need an alive entity to get its data.
+	 * @see DatabaseMoves#getAllEggAttacks(Entity6CanBattle)
+	 */
+	public static ArrayList<Attack> getAllEggAttacks(BaseStats stats) {
+		ArrayList attacks = new ArrayList();
+		
+		try {
+			Connection conn = DatabaseHelper.getConnection();
+			Statement stat = conn.createStatement();
+			ResultSet rs = stat.executeQuery("select MOVEID from PIXELMONEGGSKILLS where PIXELMONID='" + stats.baseFormID + "'");
+			
+			while(rs.next()) {
+				int moveID = rs.getInt("MOVEID");
+				Attack attack = DatabaseMoves.getAttack(moveID);
+				if (attack != null) {
+					attacks.add(attack);
+				}
+			}
+			
+			rs.close();
+		} catch (Exception var7) {
+			;
+		}
+		
+		return attacks;
 	}
 	
 	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
