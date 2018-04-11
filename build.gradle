@@ -75,9 +75,3 @@ processResources {
         exclude "mcmod.info"
     }
 }
-
-jar {
-    manifest {
-        attributes 'FMLAT': 'zpixelmonplaceholders_at.cfg'
-    }
-}

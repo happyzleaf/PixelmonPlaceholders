@@ -29,6 +29,9 @@ public class PPConfig {
 	public static int maxFractionDigits = 2;
 	public static int minFractionDigits = 0;
 	
+	private static String teamMemberNotAvailableMessage = "";
+	public static Text teamMemberNotAvailableText;
+	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
 	private static File file;
@@ -58,12 +61,14 @@ public class PPConfig {
 		evolutionNotAvailableMessage = messages.getNode("evolutionNotAvailable").getString();
 		moveNotAvailableMessage = messages.getNode("moveNotAvailable").getString();
 		noneMessage = messages.getNode("none").getString();
+		teamMemberNotAvailableMessage = messages.getNode("teamMemberNotAvailable").getString();
 		
 		disabledEggText = deserialize(disabledEggMessage);
 		entityNotFoundText = deserialize(entityNotFoundMessage);
 		evolutionNotAvailableText = deserialize(evolutionNotAvailableMessage);
 		moveNotAvailableText = deserialize(moveNotAvailableMessage);
 		noneText = deserialize(noneMessage);
+		teamMemberNotAvailableText = deserialize(teamMemberNotAvailableMessage);
 	}
 	
 	public static void saveConfig() {
@@ -80,6 +85,7 @@ public class PPConfig {
 		messages.getNode("evolutionNotAvailable").setValue(evolutionNotAvailableMessage);
 		messages.getNode("moveNotAvailable").setValue(moveNotAvailableMessage);
 		messages.getNode("none").setValue(noneMessage);
+		messages.getNode("teamMemberNotAvailable").setValue(teamMemberNotAvailableMessage);
 		
 		save();
 	}

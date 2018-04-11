@@ -3,7 +3,6 @@ package com.github.happyzleaf.pixelmonplaceholders.utility;
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.battles.attacks.Attack;
-import com.pixelmonmod.pixelmon.config.PixelmonEntityList;
 import com.pixelmonmod.pixelmon.database.DatabaseHelper;
 import com.pixelmonmod.pixelmon.database.DatabaseMoves;
 import com.pixelmonmod.pixelmon.database.DatabaseStats;
@@ -23,7 +22,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import org.apache.commons.lang3.ArrayUtils;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 
 import javax.annotation.Nullable;
@@ -120,7 +118,7 @@ public class ParserUtility {
 				 * cause, even if i'm sure that Umbreon does not have a post evolution,
 				 * i'm putting a big limit to the OOP which should work regardless of the poke.
 				 *
-				 * Yeah, i'm sure no one will understand what i've wrote, but don't worry, i'm the choosen, i'm gonna fix it myself and you won't even notice.
+				 * Yeah, i'm sure no one will understand what i've wrote, but don't worry, i'm the chosen, i'm gonna fix it myself and you won't even notice.
 				 */
 				return asReadableList(values, 2, Arrays.stream(stats.evolutions).map(evolution -> evolution.to.name).toArray());
 			case "preevolutions":
@@ -338,6 +336,10 @@ public class ParserUtility {
 	}
 	
 	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
+		if (id.length == 2 && id[0] == -1 && id[1] == -1) {
+			return PPConfig.teamMemberNotAvailableText;
+		}
+		
 		boolean isSentOut = true; //The nbt "IsInBall" might be incorrect, so we save the real value here, before we load the pixelmon.
 		
 		EntityPixelmon pokemon = storage.getAlreadyExists(id, (World) player.getWorld()).orElse(null);
@@ -353,6 +355,7 @@ public class ParserUtility {
 		if (pokemon.isEgg && PPConfig.disableEggInfo) {
 			return PPConfig.disabledEggText;
 		}
+		//everything till this since 1.3.1
 		
 		if (values.length >= 2) {
 			switch (values[1]) {
