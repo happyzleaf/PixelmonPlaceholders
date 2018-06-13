@@ -25,11 +25,11 @@ import java.io.File;
  * Copyright (c). All rights reserved.
  ***************************************/
 @Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, description = "Pixelmon Placeholders", version = PixelmonPlaceholders.VERSION,
-		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon"), @Dependency(id = "placeholderapi", version = "[4.4,)")})
+		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"}, dependencies = {@Dependency(id = "pixelmon", version = "6.3.1"), @Dependency(id = "placeholderapi", version = "[4.4,)")})
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "zpixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "1.3.1";
+	public static final String VERSION = "1.3.1-hotfix";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	

@@ -1,13 +1,11 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
-import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.storage.PixelmonStorage;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
 import me.rojo8399.placeholderapi.*;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.world.World;
 import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.Arrays;
@@ -54,7 +52,7 @@ public class Placeholders {
 						return String.valueOf(result2).substring(0, String.valueOf(result2).indexOf(".") + 3);
 					}
 				case "balance":
-					return formatBigNumbers(storage.getCurrency());
+					return formatBigNumbers(storage.getMoney());
 				case "team": //TODO move to %party_[...]%
 					if (values.length > 1) {
 						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
@@ -85,7 +83,7 @@ public class Placeholders {
 	}*/
 	
 	@Placeholder(id = "pixelmon")
-	public Object pixelmon(@Source Player player, @Token String token) throws NoValueException {
+	public Object pixelmon(@Token String token) throws NoValueException {
 		switch (token) {
 			case "dexsize":
 				return EnumPokemon.values().length;
@@ -96,7 +94,7 @@ public class Placeholders {
 	}
 	
 	@Placeholder(id = "pokedex")
-	public Object pokedex(@Source Player player, @Token String token) throws NoValueException {
+	public Object pokedex(@Token String token) throws NoValueException {
 		String[] values = token.split("_");
 		if (values.length >= 1) {
 			EnumPokemon pokemon = null;
