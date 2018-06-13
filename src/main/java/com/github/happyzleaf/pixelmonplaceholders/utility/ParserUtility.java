@@ -86,7 +86,7 @@ public class ParserUtility {
 			case "catchrate":
 				return stats.catchRate;
 			case "nationalid":
-				return stats.nationalPokedexNumber;
+				return String.format("%03d", stats.nationalPokedexNumber);
 			case "rarity":
 				if (values.length == 3) {
 					int rarity;
