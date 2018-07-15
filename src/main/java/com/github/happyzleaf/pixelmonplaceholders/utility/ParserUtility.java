@@ -41,7 +41,7 @@ public class ParserUtility {
 	private static HashMap<EnumPokemon, PokemonDropInformation> pokemonDrops;
 	private static Field mainDrop, rareDrop, optDrop1, optDrop2;
 	private static Field friendship, level, type, weather;
-	
+
 	static {
 		try {
 			Field pokemonDropsField = DropItemRegistry.class.getDeclaredField("pokemonDrops");
@@ -55,7 +55,7 @@ public class ParserUtility {
 			optDrop1.setAccessible(true);
 			optDrop2 = PokemonDropInformation.class.getDeclaredField("optDrop2");
 			optDrop2.setAccessible(true);
-			
+
 			friendship = FriendshipCondition.class.getDeclaredField("friendship");
 			friendship.setAccessible(true);
 			level = LevelCondition.class.getDeclaredField("level");
@@ -64,22 +64,22 @@ public class ParserUtility {
 			type.setAccessible(true);
 			weather = WeatherCondition.class.getDeclaredField("weather");
 			weather.setAccessible(true);
-			
+
 		} catch (IllegalAccessException | NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static Object parsePokedexInfo(EnumPokemon pokemon, String[] values) throws NoValueException {
 		if (values.length == 1) {
 			return pokemon.name;
 		}
-		
+
 		BaseStats stats = Entity3HasStats.getBaseStats(pokemon).orElse(null);
 		if (stats == null) {
 			throw new RuntimeException("Could not find BaseStats for " + pokemon.name + ".");
 		}
-		
+
 		switch (values[1]) {
 			case "name":
 				return pokemon.name;
@@ -208,7 +208,7 @@ public class ParserUtility {
 									return PPConfig.evolutionNotAvailableText;
 								}
 							}
-							
+
 						}
 					}
 				}
@@ -303,34 +303,34 @@ public class ParserUtility {
 		}
 		throw new NoValueException();
 	}
-	
+
 	public static Object[] getAllAttackNames(BaseStats stats) {
 		return stats.getAllMoves().stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray();
 	}
-	
+
 	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
 		if (id.length == 2 && id[0] == -1 && id[1] == -1) {
 			return PPConfig.teamMemberNotAvailableText;
 		}
-		
+
 		boolean isSentOut = true; //The nbt "IsInBall" might be incorrect, so we save the real value here, before we load the pixelmon.
 		//TODO ^ this is stupid pls fix
-		
+
 		EntityPixelmon pokemon = storage.getAlreadyExists(id, (World) player.getWorld()).orElse(null);
 		if (pokemon == null) {
 			pokemon = storage.sendOut(id, (World) player.getWorld());
 			isSentOut = false;
 		}
-		
+
 		if (pokemon == null) {
 			return PPConfig.entityNotFoundText;
 		}
-		
+
 		if (pokemon.isEgg && PPConfig.disableEggInfo) {
 			return PPConfig.disabledEggText;
 		}
 		//everything till this since 1.3.1
-		
+
 		if (values.length >= 2) {
 			switch (values[1]) {
 				case "nickname":
@@ -478,10 +478,10 @@ public class ParserUtility {
 					return pokemon.getIsShiny();
 			}
 		}
-		
+
 		return parsePokedexInfo(EnumPokemon.getFromNameAnyCase(pokemon.getPokemonName()), values);
 	}
-	
+
 	/**
 	 * @param values
 	 * @param index  The index in the array values where the method should start
@@ -505,7 +505,7 @@ public class ParserUtility {
 		}
 		return list.isEmpty() ? PPConfig.noneText : list;
 	}
-	
+
 	public static String formatBigNumbers(int number) {
 		if (number < 1000) {
 			return String.valueOf(number);
@@ -517,32 +517,32 @@ public class ParserUtility {
 			return String.valueOf((double) Math.round(number / 100000000) / 10) + "b";
 		}
 	}
-	
+
 	private static DecimalFormat formatter = new DecimalFormat();
-	
+
 	static {
 		formatter.setMaximumFractionDigits(PPConfig.maxFractionDigits);
 		formatter.setMinimumFractionDigits(PPConfig.minFractionDigits);
 	}
-	
+
 	public static String formatDouble(double number) {
 		return formatter.format(number);
 	}
-	
+
 	public static Object getItemStackInfo(@Nullable ItemStack is) {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
-	
+
 	/*
 		TODO normalize function
 		takes a string and returns the human-readable version of it
 		MossyRock => Mossy Rock
 		CLEAR => Clear
 	 */
-	
+
 	//Please stop yelling at me Sandy! not in front of our children!
 	private static Map<String, EvoParser> evoParsers = new HashMap<>();
-	
+
 	static {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
@@ -641,14 +641,14 @@ public class ParserUtility {
 			}
 		});
 	}
-	
+
 	public static abstract class EvoParser<T extends EvoCondition> {
 		public Class<T> clazz;
-		
+
 		public EvoParser(Class<T> clazz) {
 			this.clazz = clazz;
 		}
-		
+
 		public abstract Object parse(T condition, String[] values, int index) throws NoValueException, IllegalAccessException;
 	}
 }
