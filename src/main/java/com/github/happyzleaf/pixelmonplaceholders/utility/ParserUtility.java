@@ -1,34 +1,62 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
+import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
+import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.Entity3HasStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
+import com.pixelmonmod.pixelmon.entities.pixelmon.specs.UnbreedableFlag;
+import com.pixelmonmod.pixelmon.entities.pixelmon.specs.UntradeableFlag;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.EVsStore;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.IVStore;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
-import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.BiomeCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.ChanceCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.EvoCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.EvoRockCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.FriendshipCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.GenderCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.HeldItemCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.HighAltitudeCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.LevelCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.MoveCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.MoveTypeCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.PartyCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.TimeCondition;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.WeatherCondition;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.types.LevelingEvolution;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
 import com.pixelmonmod.pixelmon.enums.EnumType;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
+import de.randombyte.entityparticles.data.EntityParticlesKeys;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.annotation.Nullable;
 
 /***************************************
  * PixelmonPlaceholders
@@ -41,7 +69,7 @@ public class ParserUtility {
 	private static HashMap<EnumPokemon, PokemonDropInformation> pokemonDrops;
 	private static Field mainDrop, rareDrop, optDrop1, optDrop2;
 	private static Field friendship, level, type, weather;
-	
+
 	static {
 		try {
 			Field pokemonDropsField = DropItemRegistry.class.getDeclaredField("pokemonDrops");
@@ -55,7 +83,7 @@ public class ParserUtility {
 			optDrop1.setAccessible(true);
 			optDrop2 = PokemonDropInformation.class.getDeclaredField("optDrop2");
 			optDrop2.setAccessible(true);
-			
+
 			friendship = FriendshipCondition.class.getDeclaredField("friendship");
 			friendship.setAccessible(true);
 			level = LevelCondition.class.getDeclaredField("level");
@@ -64,22 +92,22 @@ public class ParserUtility {
 			type.setAccessible(true);
 			weather = WeatherCondition.class.getDeclaredField("weather");
 			weather.setAccessible(true);
-			
+
 		} catch (IllegalAccessException | NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static Object parsePokedexInfo(EnumPokemon pokemon, String[] values) throws NoValueException {
 		if (values.length == 1) {
 			return pokemon.name;
 		}
-		
+
 		BaseStats stats = Entity3HasStats.getBaseStats(pokemon).orElse(null);
 		if (stats == null) {
 			throw new RuntimeException("Could not find BaseStats for " + pokemon.name + ".");
 		}
-		
+
 		switch (values[1]) {
 			case "name":
 				return pokemon.name;
@@ -208,7 +236,7 @@ public class ParserUtility {
 									return PPConfig.evolutionNotAvailableText;
 								}
 							}
-							
+
 						}
 					}
 				}
@@ -303,34 +331,34 @@ public class ParserUtility {
 		}
 		throw new NoValueException();
 	}
-	
+
 	public static Object[] getAllAttackNames(BaseStats stats) {
 		return stats.getAllMoves().stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray();
 	}
-	
+
 	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
 		if (id.length == 2 && id[0] == -1 && id[1] == -1) {
 			return PPConfig.teamMemberNotAvailableText;
 		}
-		
+
 		boolean isSentOut = true; //The nbt "IsInBall" might be incorrect, so we save the real value here, before we load the pixelmon.
 		//TODO ^ this is stupid pls fix
-		
+
 		EntityPixelmon pokemon = storage.getAlreadyExists(id, (World) player.getWorld()).orElse(null);
 		if (pokemon == null) {
 			pokemon = storage.sendOut(id, (World) player.getWorld());
 			isSentOut = false;
 		}
-		
+
 		if (pokemon == null) {
 			return PPConfig.entityNotFoundText;
 		}
-		
+
 		if (pokemon.isEgg && PPConfig.disableEggInfo) {
 			return PPConfig.disabledEggText;
 		}
 		//everything till this since 1.3.1
-		
+
 		if (values.length >= 2) {
 			switch (values[1]) {
 				case "nickname":
@@ -476,12 +504,107 @@ public class ParserUtility {
 					return pokemon.getGrowth().name();
 				case "shiny": //Since 1.3.0
 					return pokemon.getIsShiny();
+				case "hiddenpower":
+					return HiddenPower.getHiddenPowerType(pokemon.stats.ivs);
+				case "ivtotalsum":
+					return sumIvs(pokemon.stats.ivs);
+				case "evtotalsum":
+					return sumEvs(pokemon.stats.evs);
+				case "ivtotalpercent":
+					return String.format("%.0f%%", ((float) sumIvs(pokemon.stats.ivs) / (float) getMaxIvs()) * 100);
+				case "evtotalpercent":
+					return String.format("%.0f%%", ((float) sumEvs(pokemon.stats.evs) / (float) getMaxEvs()) * 100);
+				case "texturelocation":
+					return getSprite(pokemon);
+				case "customtexture":
+				    return getCustomTexture(pokemon);
+				case "form":
+					return pokemon.getForm();
+                case "aura":
+                    return getAuraID(pokemon);
+				case "breedable":
+					return !((UnbreedableFlag) PokemonSpec.getSpecForKey("unbreedable")).matches(pokemon);
+				case "tradeable":
+					return !((UntradeableFlag) PokemonSpec.getSpecForKey("untradeable")).matches(pokemon);
+
 			}
 		}
-		
 		return parsePokedexInfo(EnumPokemon.getFromNameAnyCase(pokemon.getPokemonName()), values);
 	}
-	
+
+	private static String getCustomTexture(EntityPixelmon pokemon) {
+		String custom =  pokemon.getDataManager().get(EntityPixelmon.dwCustomTexture);
+		if (custom == null || custom.isEmpty()) {
+			return "N/A";
+		}
+		return custom;
+	}
+
+	private static String getAuraID(EntityPixelmon pokemon) {
+		if (!Sponge.getPluginManager().isLoaded("entity-particles")) {
+			return "N/A";
+		}
+		return ((Entity) pokemon).get(EntityParticlesKeys.PARTICLE_ID).orElse("N/A");
+	}
+
+	private static String getSprite(EntityPixelmon pokemon) {
+		EnumPokemon enumPokemon = EnumPokemon.getFromNameAnyCase(pokemon.getPokemonName());
+
+		return getSpriteFromID(enumPokemon.getNationalPokedexInteger(), pokemon.getPokemonName(), pokemon.getIsShiny(), pokemon.isEgg,
+					pokemon.eggCycles, pokemon.getForm());
+	}
+
+	// Based on com.pixelmonmod.pixelmon.client.render.tileEntities.RenderTileEntityTradingMachine#getSpriteFromID
+	private static String getSpriteFromID(int nationalPokedexNumber, String pokemonName, boolean isShiny, boolean isEgg, int eggCycles, int variant) {
+		String basePath = "pixelmon:sprites/pokemon/";
+		if (isShiny) {
+			basePath = "pixelmon:sprites/shinypokemon/";
+		} else if (isEgg) {
+			basePath = "pixelmon:sprites/eggs/";
+		}
+
+		if (isEgg) {
+			String eggType = "egg";
+			if (nationalPokedexNumber == 175) {
+				eggType = "togepi";
+			} else if (nationalPokedexNumber == 490) {
+				eggType = "manaphy";
+			}
+
+			if (eggCycles > 10) {
+				return basePath + eggType + "1";
+			} else {
+				return eggCycles > 5 ? basePath + eggType + "2" : basePath + eggType + "3";
+			}
+		} else {
+			Optional<EnumPokemon> optional = EnumPokemon.getFromName(pokemonName);
+			if (optional.isPresent()) {
+				EnumPokemon pokemon = (EnumPokemon)optional.get();
+				return basePath + pokemon.getNationalPokedexNumber() + pokemon.getFormEnum(variant).getSpriteSuffix();
+			} else {
+				return basePath + String.format("%03d", nationalPokedexNumber);
+			}
+		}
+	}
+
+	private static int sumIvs(IVStore ivStore) {
+		return Arrays.stream(ivStore.getArray()).sum();
+	}
+
+	private static int sumEvs(EVsStore eVsStore) {
+		return Arrays.stream(eVsStore.getArray()).sum();
+	}
+
+	private static int getMaxIvs() {
+		IVStore store = new IVStore();
+		store.maximizeIVs();
+		return sumIvs(store);
+	}
+
+	private static int getMaxEvs() {
+		return EVsStore.MAX_TOTAL_EVS;
+	}
+
 	/**
 	 * @param values
 	 * @param index  The index in the array values where the method should start
@@ -505,7 +628,7 @@ public class ParserUtility {
 		}
 		return list.isEmpty() ? PPConfig.noneText : list;
 	}
-	
+
 	public static String formatBigNumbers(int number) {
 		if (number < 1000) {
 			return String.valueOf(number);
@@ -517,32 +640,32 @@ public class ParserUtility {
 			return String.valueOf((double) Math.round(number / 100000000) / 10) + "b";
 		}
 	}
-	
+
 	private static DecimalFormat formatter = new DecimalFormat();
-	
+
 	static {
 		formatter.setMaximumFractionDigits(PPConfig.maxFractionDigits);
 		formatter.setMinimumFractionDigits(PPConfig.minFractionDigits);
 	}
-	
+
 	public static String formatDouble(double number) {
 		return formatter.format(number);
 	}
-	
+
 	public static Object getItemStackInfo(@Nullable ItemStack is) {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
-	
+
 	/*
 		TODO normalize function
 		takes a string and returns the human-readable version of it
 		MossyRock => Mossy Rock
 		CLEAR => Clear
 	 */
-	
+
 	//Please stop yelling at me Sandy! not in front of our children!
 	private static Map<String, EvoParser> evoParsers = new HashMap<>();
-	
+
 	static {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
@@ -641,14 +764,14 @@ public class ParserUtility {
 			}
 		});
 	}
-	
+
 	public static abstract class EvoParser<T extends EvoCondition> {
 		public Class<T> clazz;
-		
+
 		public EvoParser(Class<T> clazz) {
 			this.clazz = clazz;
 		}
-		
+
 		public abstract Object parse(T condition, String[] values, int index) throws NoValueException, IllegalAccessException;
 	}
 }

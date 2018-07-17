@@ -54,7 +54,8 @@ repositories {
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile 'com.github.rojo8399:PlaceholderAPI:4.4'
+    compile 'com.github.Aaron1011:PlaceholderAPI:e5bd493c912ae'
+    compile 'com.github.randombyte-developer:entity-particles:v3.0.0'
 }
 
 processResources {
