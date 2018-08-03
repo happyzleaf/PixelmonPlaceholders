@@ -336,7 +336,7 @@ public class ParserUtility {
 		return stats.getAllMoves().stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray();
 	}
 
-	public static Object parsePokemonInfo(Player player, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
+	public static Object parsePokemonInfo(net.minecraft.entity.Entity owner, PlayerStorage storage, int[] id, String[] values) throws NoValueException {
 		if (id.length == 2 && id[0] == -1 && id[1] == -1) {
 			return PPConfig.teamMemberNotAvailableText;
 		}
@@ -344,9 +344,9 @@ public class ParserUtility {
 		boolean isSentOut = true; //The nbt "IsInBall" might be incorrect, so we save the real value here, before we load the pixelmon.
 		//TODO ^ this is stupid pls fix
 
-		EntityPixelmon pokemon = storage.getAlreadyExists(id, (World) player.getWorld()).orElse(null);
+		EntityPixelmon pokemon = storage.getAlreadyExists(id, owner.world).orElse(null);
 		if (pokemon == null) {
-			pokemon = storage.sendOut(id, (World) player.getWorld());
+			pokemon = storage.sendOut(id, owner.world);
 			isSentOut = false;
 		}
 
@@ -469,11 +469,11 @@ public class ParserUtility {
 						switch (values[2]) {
 							case "x":
 								//return pos.getX(); <-- this is way more elegant but i'd like to avoid creating a new vector on every placeholder request
-								return formatDouble(isSentOut ? pokemon.getPosition().getX() : player.getPosition().getX()); //NOTE: This method won't work with 7.0.0!
+								return formatDouble(isSentOut ? pokemon.getPosition().getX() : owner.getPosition().getX()); //NOTE: This method won't work with 7.0.0!
 							case "y":
-								return formatDouble(isSentOut ? pokemon.getPosition().getY() : player.getPosition().getY());
+								return formatDouble(isSentOut ? pokemon.getPosition().getY() : owner.getPosition().getY());
 							case "z":
-								return formatDouble(isSentOut ? pokemon.getPosition().getZ() : player.getPosition().getZ());
+								return formatDouble(isSentOut ? pokemon.getPosition().getZ() : owner.getPosition().getZ());
 						}
 					}
 					break;
