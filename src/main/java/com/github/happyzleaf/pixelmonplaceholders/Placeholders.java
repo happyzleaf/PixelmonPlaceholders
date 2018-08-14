@@ -1,23 +1,38 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
+import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.formatBigNumbers;
+import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.parsePokedexInfo;
+import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.parsePokemonInfo;
+
+import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.enums.EnumPokemon;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.storage.PixelmonStorage;
 import com.pixelmonmod.pixelmon.storage.PlayerStorage;
-import me.rojo8399.placeholderapi.*;
+import me.rojo8399.placeholderapi.Listening;
+import me.rojo8399.placeholderapi.NoValueException;
+import me.rojo8399.placeholderapi.Placeholder;
+import me.rojo8399.placeholderapi.Source;
+import me.rojo8399.placeholderapi.Token;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
-import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
-
 @Listening
 public class Placeholders {
 	@Placeholder(id = "trainer")
-	public Object trainer(@Source Player player, @Token String token) throws NoValueException {
-		Optional<PlayerStorage> optStorage = PixelmonStorage.pokeBallManager.getPlayerStorage((EntityPlayerMP) player);
+	public Object trainer(@Source Entity playerOrTrainer, @Token String token) throws NoValueException {
+		Optional<PlayerStorage> optStorage;
+		if (playerOrTrainer instanceof EntityPlayerMP) {
+			optStorage = PixelmonStorage.pokeBallManager.getPlayerStorage((EntityPlayerMP) playerOrTrainer);
+		} else if (playerOrTrainer instanceof NPCTrainer) {
+			optStorage = Optional.of(((NPCTrainer) playerOrTrainer).getPokemonStorage());
+		} else {
+			throw new NoValueException();
+		}
+
 		if (optStorage.isPresent()) {
 			PlayerStorage storage = optStorage.get();
 			String[] values = token.split("_");
@@ -57,7 +72,7 @@ public class Placeholders {
 					if (values.length > 1) {
 						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
 						try {
-							return parsePokemonInfo(player, storage, storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), pokeValues);
+							return parsePokemonInfo(playerOrTrainer, storage, storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), pokeValues);
 						} catch (NumberFormatException ignored) {}
 					}
 					break;
