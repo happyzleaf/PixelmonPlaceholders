@@ -24,10 +24,10 @@ import java.io.File;
  *
  * Copyright (c). All rights reserved.
  ***************************************/
-@Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, description = "Pixelmon Placeholders", version = PixelmonPlaceholders.VERSION,
+@Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, version = PixelmonPlaceholders.VERSION, description = "Pixelmon Placeholders",
 		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"},
 		dependencies = {
-				@Dependency(id = "pixelmon", version = "6.3.1"),
+				@Dependency(id = "pixelmon", version = "6.3.4"),
 				@Dependency(id = "placeholderapi", version = "[4.4,)"),
 				@Dependency(id = "entity-particles", version = "2.1", optional = true)
 		}
@@ -35,23 +35,23 @@ import java.io.File;
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "zpixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "1.3.1-hotfix";
-
+	public static final String VERSION = "1.3.2";
+	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
-
+	
 	@Inject
 	@DefaultConfig(sharedRoot = true)
 	private ConfigurationLoader<CommentedConfigurationNode> configLoader;
-
+	
 	@Inject
 	@DefaultConfig(sharedRoot = true)
 	private File configFile;
-
+	
 	@Listener
 	public void preInit(GamePreInitializationEvent event) {
 		PPConfig.init(configLoader, configFile);
 	}
-
+	
 	@Listener
 	public void onGamePostInitialization(GamePostInitializationEvent event) {
 		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), this).stream().map(builder -> {
@@ -71,10 +71,10 @@ public class PixelmonPlaceholders {
 				ex.printStackTrace();
 			}
 		});
-
+		
 		LOGGER.info("Loaded! This plugin was made by happyzleaf :)");
 	}
-
+	
 	@Listener
 	public void onGameReload(GameReloadEvent event) {
 		PPConfig.loadConfig();

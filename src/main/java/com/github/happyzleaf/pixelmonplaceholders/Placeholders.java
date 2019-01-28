@@ -32,7 +32,7 @@ public class Placeholders {
 		} else {
 			throw new NoValueException();
 		}
-
+		
 		if (optStorage.isPresent()) {
 			PlayerStorage storage = optStorage.get();
 			String[] values = token.split("_");
@@ -73,14 +73,15 @@ public class Placeholders {
 						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
 						try {
 							return parsePokemonInfo(playerOrTrainer, storage, storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), pokeValues);
-						} catch (NumberFormatException ignored) {}
+						} catch (NumberFormatException ignored) {
+						}
 					}
 					break;
 			}
 		}
 		throw new NoValueException();
 	}
-
+	
 	//don't mind me
 	/*@Placeholder(id = "ray")
 	public Object ray(@Source Player player, @Token String token) throws NoValueException {
@@ -96,7 +97,7 @@ public class Placeholders {
 
 		}
 	}*/
-
+	
 	@Placeholder(id = "pixelmon")
 	public Object pixelmon(@Token String token) throws NoValueException {
 		switch (token) {
@@ -107,13 +108,13 @@ public class Placeholders {
 		}
 		throw new NoValueException();
 	}
-
+	
 	@Placeholder(id = "pokedex")
 	public Object pokedex(@Token String token) throws NoValueException {
 		String[] values = token.split("_");
 		if (values.length >= 1) {
 			EnumPokemon pokemon = null;
-
+			
 			try {
 				int nationalId = Integer.parseInt(values[0]);
 				if (nationalId >= 0 && nationalId <= EnumPokemon.values().length) {
@@ -122,7 +123,7 @@ public class Placeholders {
 			} catch (NumberFormatException e) {
 				pokemon = EnumPokemon.getFromNameAnyCase(values[0]);
 			}
-
+			
 			if (pokemon != null) {
 				return parsePokedexInfo(pokemon, values);
 			}
