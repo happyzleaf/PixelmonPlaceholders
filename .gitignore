@@ -5,6 +5,7 @@ out
 build
 libs
 run
+changelog.txt
 
 # Windows image file caches
 Thumbs.db
@@ -53,4 +54,3 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
-changelog.txt
