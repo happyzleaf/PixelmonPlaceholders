@@ -1,85 +1,113 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
-import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.formatBigNumbers;
-import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.parsePokedexInfo;
-import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.parsePokemonInfo;
-
+import com.pixelmonmod.pixelmon.Pixelmon;
+import com.pixelmonmod.pixelmon.api.storage.PartyStorage;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
-import com.pixelmonmod.pixelmon.enums.EnumPokemon;
+import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
-import com.pixelmonmod.pixelmon.storage.PixelmonStorage;
-import com.pixelmonmod.pixelmon.storage.PlayerStorage;
-import me.rojo8399.placeholderapi.Listening;
-import me.rojo8399.placeholderapi.NoValueException;
-import me.rojo8399.placeholderapi.Placeholder;
-import me.rojo8399.placeholderapi.Source;
-import me.rojo8399.placeholderapi.Token;
-import net.minecraft.entity.Entity;
+import com.pixelmonmod.pixelmon.storage.PlayerPartyStorage;
+import me.rojo8399.placeholderapi.*;
 import net.minecraft.entity.player.EntityPlayerMP;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.living.player.Player;
 
-import java.util.Arrays;
-import java.util.Optional;
+import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
 
 @Listening
 public class Placeholders {
+	public static void register() {
+		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), PixelmonPlaceholders.instance).stream().map(builder -> {
+			switch (builder.getId()) { // TODO update?
+				case "trainer":
+					return builder.tokens("dexcount", "dexpercentage", "seencount", "wins", "losses", "wlratio", "balance", "team-[position]").description("Pixelmon trainer's Placeholders.");
+				case "pixelmon":
+					return builder.tokens("dexsize", "dexsizeall").description("General Pixelmon's placeholders.");
+				case "pokedex":
+					return builder.tokens("[name]", "[nationalId]").description("Specific Pokémon's placeholders.");
+			}
+			return builder;
+		}).map(builder -> builder.author("happyzleaf").plugin(PixelmonPlaceholders.instance).version(PixelmonPlaceholders.VERSION)).forEach(builder -> {
+			try {
+				builder.buildAndRegister();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		});
+	}
+	
 	@Placeholder(id = "trainer")
-	public Object trainer(@Source Entity playerOrTrainer, @Token String token) throws NoValueException {
-		Optional<PlayerStorage> optStorage;
-		if (playerOrTrainer instanceof EntityPlayerMP) {
-			optStorage = PixelmonStorage.pokeBallManager.getPlayerStorage((EntityPlayerMP) playerOrTrainer);
-		} else if (playerOrTrainer instanceof NPCTrainer) {
-			optStorage = Optional.of(((NPCTrainer) playerOrTrainer).getPokemonStorage());
-		} else {
-			throw new NoValueException();
-		}
+	public Object trainer(@Source Player player, @Token String token) throws NoValueException {
+		PlayerPartyStorage party = Pixelmon.storageManager.getParty((EntityPlayerMP) player);
 		
-		if (optStorage.isPresent()) {
-			PlayerStorage storage = optStorage.get();
-			String[] values = token.split("_");
+		String[] values = token.split("_");
+		if (values.length > 0) {
 			switch (values[0]) {
-				case "dexcount":
-					return storage.pokedex.countCaught();
-				case "dexpercentage":
-					String result1 = String.valueOf((double) storage.pokedex.countCaught() * 100 / EnumPokemon.values().length);
-					if (result1.substring(result1.indexOf(".") + 1).length() == 1) {
-						return result1.substring(0, result1.length() - 2);
-					} else {
-						return result1.substring(0, result1.indexOf(".") + 3);
-					}
-				case "seencount":
-					return storage.pokedex.getSeenMap().size();
-				case "wins":
-					return storage.stats.getWins();
-				case "losses":
-					return storage.stats.getLosses();
-				case "wlratio":
-					int wins = storage.stats.getWins();
-					int total = wins + storage.stats.getLosses();
-					double result2;
-					if (total <= 0) {
-						result2 = 1;
-					} else {
-						result2 = (double) wins / total;
-					}
-					if (String.valueOf(result2).substring(String.valueOf(result2).indexOf(".") + 1).length() == 1) {
-						return String.valueOf(result2).concat("0");
-					} else {
-						return String.valueOf(result2).substring(0, String.valueOf(result2).indexOf(".") + 3);
-					}
-				case "balance":
-					return formatBigNumbers(storage.getMoney());
-				case "team": //TODO move to %party_[...]%
+				case "team": // remove? %party% is enough
 					if (values.length > 1) {
-						String[] pokeValues = Arrays.copyOfRange(values, 1, values.length);
+						int slot;
 						try {
-							return parsePokemonInfo(playerOrTrainer, storage, storage.getIDFromPosition(Integer.parseInt(pokeValues[0]) - 1), pokeValues);
-						} catch (NumberFormatException ignored) {
+							slot = Integer.parseInt(values[1]) - 1;
+						} catch (NumberFormatException e) {
+							throw new NoValueException(String.format("%s is not a valid number.", values[0]));
 						}
+						if (slot < 0 || slot >= PartyStorage.MAX_PARTY) {
+							throw new NoValueException(String.format("The slot must be between 1 and %d.", PartyStorage.MAX_PARTY));
+						}
+						
+						return parsePokemonInfo(player, party.get(slot), copyOfRange(values, 2, values.length));
 					}
 					break;
+				case "dexcount":
+					return party.pokedex.countCaught();
+				case "dexpercentage":
+					return formatDouble(party.pokedex.countCaught() * 100 / (double) EnumSpecies.values().length);
+				case "seencount":
+					return party.pokedex.getSeenMap().size();
+				case "wins":
+					return party.stats.getWins();
+				case "losses":
+					return party.stats.getLosses();
+				case "wlratio": {
+					int wins = party.stats.getWins();
+					int total = wins + party.stats.getLosses();
+					return formatDouble(total > 0 ? (double) wins / total : 1);
+				}
+				case "balance":
+					return formatBigNumbers(party.getMoney());
 			}
+		} else {
+			throw new NoValueException("Not enough arguments.");
 		}
 		throw new NoValueException();
+	}
+	
+	@Placeholder(id = "party")
+	public Object party(@Source Entity entity, @Token String token) throws NoValueException {
+		PartyStorage storage;
+		if (entity instanceof EntityPlayerMP) {
+			storage = Pixelmon.storageManager.getParty((EntityPlayerMP) entity);
+		} else if (entity instanceof NPCTrainer) {
+			storage = ((NPCTrainer) entity).getPokemonStorage();
+		} else {
+			throw new NoValueException("The source must be a Player or a NPCTrainer.");
+		}
+		
+		String[] values = token.split("_");
+		
+		int slot;
+		try {
+			slot = Integer.parseInt(values[0]) - 1;
+		} catch (IndexOutOfBoundsException e) {
+			throw new NoValueException("You didn't provide the party slot.");
+		} catch (NumberFormatException e) {
+			throw new NoValueException("%s is not a valid number.");
+		}
+		if (slot < 0 || slot >= PlayerPartyStorage.MAX_PARTY) {
+			throw new NoValueException(String.format("The party slot must be between 1 and %d.", PlayerPartyStorage.MAX_PARTY));
+		}
+		
+		return parsePokemonInfo(entity, storage.get(slot), copyOfRange(values, 1, values.length));
 	}
 	
 	//don't mind me
@@ -102,9 +130,7 @@ public class Placeholders {
 	public Object pixelmon(@Token String token) throws NoValueException {
 		switch (token) {
 			case "dexsize":
-				return EnumPokemon.values().length;
-			case "dexsizeall":
-				return Pokedex.pokedexSize;
+				return EnumSpecies.values().length;
 		}
 		throw new NoValueException();
 	}
@@ -112,21 +138,23 @@ public class Placeholders {
 	@Placeholder(id = "pokedex")
 	public Object pokedex(@Token String token) throws NoValueException {
 		String[] values = token.split("_");
-		if (values.length >= 1) {
-			EnumPokemon pokemon = null;
+		if (values.length > 0) {
+			EnumSpecies pokemon = null;
 			
 			try {
 				int nationalId = Integer.parseInt(values[0]);
-				if (nationalId >= 0 && nationalId <= EnumPokemon.values().length) {
-					pokemon = EnumPokemon.getFromNameAnyCase(Pokedex.fullPokedex.get(nationalId).name);
+				if (nationalId >= 0 && nationalId <= EnumSpecies.values().length) {
+					pokemon = EnumSpecies.getFromNameAnyCase(Pokedex.fullPokedex.get(nationalId).name);
 				}
 			} catch (NumberFormatException e) {
-				pokemon = EnumPokemon.getFromNameAnyCase(values[0]);
+				pokemon = EnumSpecies.getFromNameAnyCase(values[0]);
 			}
 			
 			if (pokemon != null) {
-				return parsePokedexInfo(pokemon, values);
+				return parsePokedexInfo(pokemon, copyOfRange(values, 1, values.length));
 			}
+		} else {
+			throw new NoValueException("Not enough arguments.");
 		}
 		throw new NoValueException();
 	}

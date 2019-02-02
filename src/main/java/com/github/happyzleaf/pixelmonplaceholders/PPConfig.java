@@ -14,9 +14,6 @@ public class PPConfig {
 	private static String disabledEggMessage = "&cThe eggs are disabled.";
 	public static Text disabledEggText;
 	
-	private static String entityNotFoundMessage = "";
-	public static Text entityNotFoundText;
-	
 	private static String evolutionNotAvailableMessage = "&cThe pixelmon does not evolve with that condition.";
 	public static Text evolutionNotAvailableText;
 	
@@ -57,14 +54,12 @@ public class PPConfig {
 		
 		ConfigurationNode messages = node.getNode("messages");
 		disabledEggMessage = messages.getNode("disabledEgg").getString();
-		entityNotFoundMessage = messages.getNode("entityNotFound").getString();
 		evolutionNotAvailableMessage = messages.getNode("evolutionNotAvailable").getString();
 		moveNotAvailableMessage = messages.getNode("moveNotAvailable").getString();
 		noneMessage = messages.getNode("none").getString();
 		teamMemberNotAvailableMessage = messages.getNode("teamMemberNotAvailable").getString();
 		
 		disabledEggText = deserialize(disabledEggMessage);
-		entityNotFoundText = deserialize(entityNotFoundMessage);
 		evolutionNotAvailableText = deserialize(evolutionNotAvailableMessage);
 		moveNotAvailableText = deserialize(moveNotAvailableMessage);
 		noneText = deserialize(noneMessage);
@@ -81,7 +76,6 @@ public class PPConfig {
 		
 		CommentedConfigurationNode messages = node.getNode("messages");
 		messages.getNode("disabledEgg").setValue(disabledEggMessage);
-		messages.getNode("entityNotFound").setValue(entityNotFoundMessage);
 		messages.getNode("evolutionNotAvailable").setValue(evolutionNotAvailableMessage);
 		messages.getNode("moveNotAvailable").setValue(moveNotAvailableMessage);
 		messages.getNode("none").setValue(noneMessage);

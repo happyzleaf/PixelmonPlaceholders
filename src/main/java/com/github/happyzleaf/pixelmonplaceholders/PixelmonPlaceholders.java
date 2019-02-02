@@ -1,12 +1,10 @@
 package com.github.happyzleaf.pixelmonplaceholders;
 
 import com.google.inject.Inject;
-import me.rojo8399.placeholderapi.PlaceholderService;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -17,27 +15,21 @@ import org.spongepowered.api.plugin.Plugin;
 
 import java.io.File;
 
-/***************************************
- * PixelmonPlaceholders
- * Created on 29/05/2017.
- * @author Vincenzo Montanari
- *
- * Copyright (c). All rights reserved.
- ***************************************/
 @Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, version = PixelmonPlaceholders.VERSION, description = "Pixelmon Placeholders",
 		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"},
 		dependencies = {
 				@Dependency(id = "pixelmon", version = "6.3.4"),
 				@Dependency(id = "placeholderapi", version = "[4.4,)"),
 				@Dependency(id = "entity-particles", version = "2.1", optional = true)
-		}
-)
+		})
 public class PixelmonPlaceholders {
-	public static final String PLUGIN_ID = "zpixelmonplaceholders";
+	public static final String PLUGIN_ID = "pixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "1.3.2";
+	public static final String VERSION = "2.0.0";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
+	
+	public static PixelmonPlaceholders instance;
 	
 	@Inject
 	@DefaultConfig(sharedRoot = true)
@@ -49,35 +41,22 @@ public class PixelmonPlaceholders {
 	
 	@Listener
 	public void preInit(GamePreInitializationEvent event) {
+		instance = this;
+		
 		PPConfig.init(configLoader, configFile);
 	}
 	
 	@Listener
 	public void onGamePostInitialization(GamePostInitializationEvent event) {
-		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), this).stream().map(builder -> {
-			switch (builder.getId()) {
-				case "trainer":
-					return builder.tokens("dexcount", "dexpercentage", "seencount", "wins", "losses", "wlratio", "balance", "team-[position]").description("Pixelmon trainer's Placeholders.");
-				case "pixelmon":
-					return builder.tokens("dexsize", "dexsizeall").description("General Pixelmon's placeholders.");
-				case "pokedex":
-					return builder.tokens("[name]", "[nationalId]").description("Specific Pokémon's placeholders.");
-			}
-			return builder;
-		}).map(builder -> builder.author("happyzleaf").plugin(this).version(VERSION)).forEach(builder -> {
-			try {
-				builder.buildAndRegister();
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		});
+		Placeholders.register();
 		
-		LOGGER.info("Loaded! This plugin was made by happyzleaf :)");
+		LOGGER.info("Loaded! This plugin was made by happyzleaf. (https://happyzleaf.com)");
 	}
 	
 	@Listener
 	public void onGameReload(GameReloadEvent event) {
 		PPConfig.loadConfig();
+		
 		LOGGER.info("Reloaded.");
 	}
 }
