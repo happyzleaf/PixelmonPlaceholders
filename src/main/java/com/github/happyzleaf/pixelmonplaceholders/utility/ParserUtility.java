@@ -11,6 +11,7 @@ import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
+import com.pixelmonmod.pixelmon.entities.pixelmon.EnumSpecialTexture;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
@@ -18,7 +19,10 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
+import com.pixelmonmod.pixelmon.enums.forms.EnumNoForm;
+import com.pixelmonmod.pixelmon.enums.forms.EnumPrimal;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
+import com.pixelmonmod.pixelmon.util.helpers.SpriteHelper;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -477,36 +481,16 @@ public class ParserUtility {
 	}
 	
 	private static String getSprite(Pokemon pokemon) {
-		return getSprite(pokemon.getSpecies(), pokemon.isShiny(), pokemon.isEgg(), pokemon.getEggCycles(), pokemon.getForm());
-	}
-	
-	// Based on com.pixelmonmod.pixelmon.client.render.tileEntities.RenderTileEntityTradingMachine#getSpriteFromID
-	private static String getSprite(EnumSpecies pokemon, boolean isShiny, boolean isEgg, int eggCycles, int variant) {
-		String basePath = "textures/sprites/pokemon/";
-		if (isShiny) {
-			basePath = "textures/sprites/shinypokemon/";
-		} else if (isEgg) {
-			basePath = "textures/sprites/eggs/";
+		String filePath = "pixelmon:sprites/";
+		EnumSpecialTexture specialTexture = pokemon.getSpecialTexture();
+		if ((pokemon.getFormEnum() instanceof EnumNoForm || pokemon.getFormEnum() instanceof EnumPrimal) && pokemon.getFormEnum().isTemporary()) {
+			specialTexture = EnumSpecialTexture.None;
 		}
-		
-		if (isEgg) {
-			String eggType = "egg";
-			if (pokemon == EnumSpecies.Togepi) {
-				eggType = "togepi";
-			} else if (pokemon == EnumSpecies.Manaphy) {
-				eggType = "manaphy";
-			}
-			
-			if (eggCycles > 10) { //show un-cracked
-				return basePath + eggType + "1.png";
-			} else if (eggCycles > 5) { //show crack 1
-				return basePath + eggType + "2.png";
-			} else { //show crack 2
-				return basePath + eggType + "3.png";
-			}
-		} else {
-			return basePath + pokemon.getNationalPokedexNumber() + pokemon.getFormEnum(variant).getSpriteSuffix();
+		if (pokemon.isShiny()) {
+			filePath += "shiny";
+			specialTexture = EnumSpecialTexture.None;
 		}
+		return filePath + ("pokemon/" + pokemon.getSpecies().getNationalPokedexNumber() + SpriteHelper.getSpriteExtra(pokemon.getSpecies().name, pokemon.getForm(), pokemon.getGender(), specialTexture.id));
 	}
 	
 	/**
