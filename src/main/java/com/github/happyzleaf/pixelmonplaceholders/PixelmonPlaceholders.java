@@ -25,7 +25,7 @@ import java.io.File;
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "pixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "2.0.0";
+	public static final String VERSION = "2.0.1";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	

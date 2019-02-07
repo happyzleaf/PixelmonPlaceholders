@@ -14,7 +14,6 @@ import org.spongepowered.api.entity.living.player.Player;
 
 import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
 
-@Listening
 public class Placeholders {
 	public static void register() {
 		Sponge.getServiceManager().provideUnchecked(PlaceholderService.class).loadAll(new Placeholders(), PixelmonPlaceholders.instance).stream().map(builder -> {
