@@ -39,15 +39,11 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 public class ParserUtility {
-	private static HashMap<EnumSpecies, PokemonDropInformation> pokemonDrops;
 	private static Field mainDrop, rareDrop, optDrop1, optDrop2;
 	private static Field friendship, level, type, weather;
 	
 	static {
 		try {
-			Field pokemonDropsField = DropItemRegistry.class.getDeclaredField("pokemonDrops");
-			pokemonDropsField.setAccessible(true);
-			pokemonDrops = (HashMap<EnumSpecies, PokemonDropInformation>) pokemonDropsField.get(null);
 			mainDrop = PokemonDropInformation.class.getDeclaredField("mainDrop");
 			mainDrop.setAccessible(true);
 			rareDrop = PokemonDropInformation.class.getDeclaredField("rareDrop");
@@ -65,8 +61,7 @@ public class ParserUtility {
 			type.setAccessible(true);
 			weather = WeatherCondition.class.getDeclaredField("weather");
 			weather.setAccessible(true);
-			
-		} catch (IllegalAccessException | NoSuchFieldException e) {
+		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
@@ -251,7 +246,7 @@ public class ParserUtility {
 				break;
 			case "drops":
 				if (values.length > 1) {
-					PokemonDropInformation drops = pokemonDrops.get(pokemon);
+					PokemonDropInformation drops = DropItemRegistry.pokemonDrops.get(pokemon);
 					if (drops == null) {
 						return PPConfig.noneText;
 					} else {
