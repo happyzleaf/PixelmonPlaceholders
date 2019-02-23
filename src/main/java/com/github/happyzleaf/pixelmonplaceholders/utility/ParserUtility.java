@@ -21,17 +21,26 @@ import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
 import com.pixelmonmod.pixelmon.enums.forms.EnumNoForm;
 import com.pixelmonmod.pixelmon.enums.forms.EnumPrimal;
+import com.pixelmonmod.pixelmon.items.ItemPixelmonSprite;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
 import com.pixelmonmod.pixelmon.util.helpers.SpriteHelper;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Key;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.service.user.UserStorageService;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.serializer.TextSerializers;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -39,28 +48,32 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 public class ParserUtility {
-	private static Field mainDrop, rareDrop, optDrop1, optDrop2;
-	private static Field friendship, level, type, weather;
+	private static Field mainDrop_f, rareDrop_f, optDrop1_f, optDrop2_f;
+	private static Field friendship_f, level_f, type_f, weather_f;
+	private static Field biomeName_f;
 	
 	static {
 		try {
-			mainDrop = PokemonDropInformation.class.getDeclaredField("mainDrop");
-			mainDrop.setAccessible(true);
-			rareDrop = PokemonDropInformation.class.getDeclaredField("rareDrop");
-			rareDrop.setAccessible(true);
-			optDrop1 = PokemonDropInformation.class.getDeclaredField("optDrop1");
-			optDrop1.setAccessible(true);
-			optDrop2 = PokemonDropInformation.class.getDeclaredField("optDrop2");
-			optDrop2.setAccessible(true);
+			mainDrop_f = PokemonDropInformation.class.getDeclaredField("mainDrop");
+			mainDrop_f.setAccessible(true);
+			rareDrop_f = PokemonDropInformation.class.getDeclaredField("rareDrop");
+			rareDrop_f.setAccessible(true);
+			optDrop1_f = PokemonDropInformation.class.getDeclaredField("optDrop1");
+			optDrop1_f.setAccessible(true);
+			optDrop2_f = PokemonDropInformation.class.getDeclaredField("optDrop2");
+			optDrop2_f.setAccessible(true);
 			
-			friendship = FriendshipCondition.class.getDeclaredField("friendship");
-			friendship.setAccessible(true);
-			level = LevelCondition.class.getDeclaredField("level");
-			level.setAccessible(true);
-			type = MoveTypeCondition.class.getDeclaredField("type");
-			type.setAccessible(true);
-			weather = WeatherCondition.class.getDeclaredField("weather");
-			weather.setAccessible(true);
+			friendship_f = FriendshipCondition.class.getDeclaredField("friendship");
+			friendship_f.setAccessible(true);
+			level_f = LevelCondition.class.getDeclaredField("level");
+			level_f.setAccessible(true);
+			type_f = MoveTypeCondition.class.getDeclaredField("type");
+			type_f.setAccessible(true);
+			weather_f = WeatherCondition.class.getDeclaredField("weather");
+			weather_f.setAccessible(true);
+			
+			biomeName_f = Biome.class.getDeclaredField("biomeName");
+			biomeName_f.setAccessible(true);
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
@@ -246,23 +259,19 @@ public class ParserUtility {
 				break;
 			case "drops":
 				if (values.length > 1) {
-					PokemonDropInformation drops = DropItemRegistry.pokemonDrops.get(pokemon);
+					Set<PokemonDropInformation> drops = DropItemRegistry.pokemonDrops.get(pokemon);
 					if (drops == null) {
 						return PPConfig.noneText;
 					} else {
-						try {
-							switch (values[1]) {
-								case "main":
-									return getItemStackInfo((ItemStack) mainDrop.get(drops));
-								case "rare":
-									return getItemStackInfo((ItemStack) rareDrop.get(drops));
-								case "optional1":
-									return getItemStackInfo((ItemStack) optDrop1.get(drops));
-								case "optional2":
-									return getItemStackInfo((ItemStack) optDrop2.get(drops));
-							}
-						} catch (IllegalAccessException e) {
-							e.printStackTrace();
+						switch (values[1]) {
+							case "main":
+								return getDropsInfo(values, 2, drops, mainDrop_f);
+							case "rare":
+								return getDropsInfo(values, 2, drops, rareDrop_f);
+							case "optional1":
+								return getDropsInfo(values, 2, drops, optDrop1_f);
+							case "optional2":
+								return getDropsInfo(values, 2, drops, optDrop2_f);
 						}
 					}
 				}
@@ -427,7 +436,7 @@ public class ParserUtility {
 				case "hiddenpower":
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
 				case "texturelocation":
-					return getSprite(pokemon);
+					return ItemPixelmonSprite.getTextureLocation(pokemon);
 				case "customtexture":
 					return getCustomTexture(pokemon);
 				case "form":
@@ -444,6 +453,25 @@ public class ParserUtility {
 					throw new NoValueException("Not enough arguments.");
 				case "aura":
 					return getAuraID(pokemon);
+				case "originaltrainer":
+					if (values.length > 1) {
+						switch (values[1]) {
+							case "name":
+								return pokemon.getOriginalTrainer() == null ? PPConfig.noneText : pokemon.getOriginalTrainer();
+							case "nickname": {
+								User user = null;
+								if (pokemon.getOriginalTrainerUUID() != null) {
+									user = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(pokemon.getOriginalTrainerUUID()).orElse(null);
+								} else if (pokemon.getOriginalTrainer() != null) {
+									user = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(pokemon.getOriginalTrainer()).orElse(null);
+								}
+								return user == null ? PPConfig.noneText : user.getPlayer().map(player -> player.get(Keys.DISPLAY_NAME).orElse(TextSerializers.FORMATTING_CODE.deserialize(player.getName()))).orElse(TextSerializers.FORMATTING_CODE.deserialize((user.getName())));
+							}
+							case "uuid":
+								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
+						}
+					}
+					break;
 			}
 		}
 		
@@ -475,19 +503,6 @@ public class ParserUtility {
 		return result;
 	}
 	
-	private static String getSprite(Pokemon pokemon) {
-		String filePath = "pixelmon:sprites/";
-		EnumSpecialTexture specialTexture = pokemon.getSpecialTexture();
-		if ((pokemon.getFormEnum() instanceof EnumNoForm || pokemon.getFormEnum() instanceof EnumPrimal) && pokemon.getFormEnum().isTemporary()) {
-			specialTexture = EnumSpecialTexture.None;
-		}
-		if (pokemon.isShiny()) {
-			filePath += "shiny";
-			specialTexture = EnumSpecialTexture.None;
-		}
-		return filePath + ("pokemon/" + pokemon.getSpecies().getNationalPokedexNumber() + SpriteHelper.getSpriteExtra(pokemon.getSpecies().name, pokemon.getForm(), pokemon.getGender(), specialTexture.id));
-	}
-	
 	/**
 	 * @param index The index in the array values where the method should start
 	 */
@@ -516,11 +531,11 @@ public class ParserUtility {
 		if (number < 1000) {
 			return String.valueOf(number);
 		} else if (number < 1000000) {
-			return String.valueOf((double) Math.round(number / 100) / 10) + "k";
+			return (double) Math.round(number / 100) / 10 + "k";
 		} else if (number < 1000000000) {
-			return String.valueOf((double) Math.round(number / 100000) / 10) + "m";
+			return (double) Math.round(number / 100000) / 10 + "m";
 		} else {
-			return String.valueOf((double) Math.round(number / 100000000) / 10) + "b";
+			return (double) Math.round(number / 100000000) / 10 + "b";
 		}
 	}
 	
@@ -535,6 +550,19 @@ public class ParserUtility {
 		return formatter.format(number);
 	}
 	
+	public static Object getDropsInfo(String[] values, int index, Set<PokemonDropInformation> drops, Field field) {
+		try {
+			List<Object> results = new ArrayList<>();
+			for (PokemonDropInformation drop : drops) {
+				results.add(getItemStackInfo((ItemStack) field.get(drop)));
+			}
+			return asReadableList(values, index, results.toArray());
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	public static Object getItemStackInfo(@Nullable ItemStack is) {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
@@ -544,8 +572,15 @@ public class ParserUtility {
 	static {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
-			public Object parse(BiomeCondition condition, String[] values, int index) { //TODO test
-				return asReadableList(values, index, condition.biomes.stream().map(biome -> ForgeRegistries.BIOMES.getValues().stream().filter(b -> biome.equalsIgnoreCase(b.biomeName)).findFirst().get()).toArray());
+			public Object parse(BiomeCondition condition, String[] values, int index) { //TODO CACHE!
+				return asReadableList(values, index, condition.biomes.stream().map(biome -> ForgeRegistries.BIOMES.getValues().stream().filter(b -> {
+					try {
+						return biome.equalsIgnoreCase((String) biomeName_f.get(b));
+					} catch (IllegalAccessException e) {
+						e.printStackTrace();
+						return false;
+					}
+				}).findFirst().get()).toArray());
 			}
 		});
 		evoParsers.put("chance", new EvoParser<ChanceCondition>(ChanceCondition.class) {
@@ -559,7 +594,14 @@ public class ParserUtility {
 			public Object parse(EvoRockCondition condition, String[] values, int index) throws NoValueException {
 				if (values.length > index) {
 					if (values[index].equals("biome")) {
-						return asReadableList(values, index + 1, Arrays.stream(condition.evolutionRock.biomes).map(biome -> biome.biomeName).toArray());
+						return asReadableList(values, index + 1, Arrays.stream(condition.evolutionRock.biomes).map(biome -> {
+							try {
+								return biomeName_f.get(biome);
+							} catch (IllegalAccessException e) {
+								e.printStackTrace();
+								return null;
+							}
+						}).filter(Objects::nonNull).toArray());
 					} else {
 						throw new NoValueException();
 					}
@@ -570,7 +612,7 @@ public class ParserUtility {
 		evoParsers.put("friendship", new EvoParser<FriendshipCondition>(FriendshipCondition.class) {
 			@Override
 			public Object parse(FriendshipCondition condition, String[] values, int index) throws IllegalAccessException {
-				int f = friendship.getInt(condition);
+				int f = friendship_f.getInt(condition);
 				return f == -1 ? 220 : f;
 			}
 		});
@@ -595,7 +637,7 @@ public class ParserUtility {
 		evoParsers.put("level", new EvoParser<LevelCondition>(LevelCondition.class) {
 			@Override
 			public Object parse(LevelCondition condition, String[] values, int index) throws IllegalAccessException {
-				return level.getInt(condition);
+				return level_f.getInt(condition);
 			}
 		});
 		evoParsers.put("move", new EvoParser<MoveCondition>(MoveCondition.class) {
@@ -607,7 +649,7 @@ public class ParserUtility {
 		evoParsers.put("movetype", new EvoParser<MoveTypeCondition>(MoveTypeCondition.class) {
 			@Override
 			public Object parse(MoveTypeCondition condition, String[] values, int index) throws IllegalAccessException {
-				return ((EnumType) type.get(condition)).getLocalizedName();
+				return ((EnumType) type_f.get(condition)).getLocalizedName();
 			}
 		});
 //		evoParsers.put("partyalolan", new EvoParser<PartyAlolanCondition>(PartyAlolanCondition.class) {
@@ -639,7 +681,7 @@ public class ParserUtility {
 		evoParsers.put("weather", new EvoParser<WeatherCondition>(WeatherCondition.class) {
 			@Override
 			public Object parse(WeatherCondition condition, String[] values, int index) throws IllegalAccessException {
-				return normalizeText(((WeatherType) weather.get(condition)).name());
+				return normalizeText(((WeatherType) weather_f.get(condition)).name());
 			}
 		});
 	}
