@@ -11,19 +11,16 @@ import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
-import com.pixelmonmod.pixelmon.entities.pixelmon.EnumSpecialTexture;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
+import com.pixelmonmod.pixelmon.enums.EnumNature;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
-import com.pixelmonmod.pixelmon.enums.forms.EnumNoForm;
-import com.pixelmonmod.pixelmon.enums.forms.EnumPrimal;
 import com.pixelmonmod.pixelmon.items.ItemPixelmonSprite;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
-import com.pixelmonmod.pixelmon.util.helpers.SpriteHelper;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -31,16 +28,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
-import org.spongepowered.api.service.user.UserStorageService;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
@@ -72,7 +62,7 @@ public class ParserUtility {
 			weather_f = WeatherCondition.class.getDeclaredField("weather");
 			weather_f.setAccessible(true);
 			
-			biomeName_f = Biome.class.getDeclaredField("biomeName");
+			biomeName_f = Arrays.stream(Biome.class.getDeclaredFields()).filter(field -> field.getName().equals("field_76791_y") || field.getName().equals("biomeName")).findFirst().get(); // Sorry I'm lazy and I hate this plugin anyway.
 			biomeName_f.setAccessible(true);
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
@@ -425,8 +415,18 @@ public class ParserUtility {
 					return pokemon.getCaughtBall().getItem().getLocalizedName();
 				//case "possibledrops":
 				//	return asReadableList(pokeValues, 1, DropItemRegistry.getDropsForPokemon(pokemon).stream().map(ParserUtility::getItemStackInfo).toArray());
-				case "nature":
-					return pokemon.getNature();
+				case "nature": {
+					EnumNature nature = pokemon.getNature();
+					if (values.length > 1) {
+						switch (values[1]) {
+							case "increased":
+								return nature.increasedStat == StatsType.None ? PPConfig.noneText : nature.increasedStat.getLocalizedName();
+							case "decreased":
+								return nature.decreasedStat == StatsType.None ? PPConfig.noneText : nature.decreasedStat.getLocalizedName();
+						}
+					}
+					return nature;
+				}
 				case "gender":
 					return pokemon.getGender().name();
 				case "growth":
@@ -458,15 +458,6 @@ public class ParserUtility {
 						switch (values[1]) {
 							case "name":
 								return pokemon.getOriginalTrainer() == null ? PPConfig.noneText : pokemon.getOriginalTrainer();
-							case "nickname": {
-								User user = null;
-								if (pokemon.getOriginalTrainerUUID() != null) {
-									user = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(pokemon.getOriginalTrainerUUID()).orElse(null);
-								} else if (pokemon.getOriginalTrainer() != null) {
-									user = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(pokemon.getOriginalTrainer()).orElse(null);
-								}
-								return user == null ? PPConfig.noneText : user.getPlayer().map(player -> player.get(Keys.DISPLAY_NAME).orElse(TextSerializers.FORMATTING_CODE.deserialize(player.getName()))).orElse(TextSerializers.FORMATTING_CODE.deserialize((user.getName())));
-							}
 							case "uuid":
 								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
 						}
