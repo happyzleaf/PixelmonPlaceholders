@@ -11,6 +11,7 @@ import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
+import com.pixelmonmod.pixelmon.entities.pixelmon.EnumSpecialTexture;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
@@ -19,8 +20,11 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumNature;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
+import com.pixelmonmod.pixelmon.enums.forms.EnumNoForm;
+import com.pixelmonmod.pixelmon.enums.forms.EnumPrimal;
 import com.pixelmonmod.pixelmon.items.ItemPixelmonSprite;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
+import com.pixelmonmod.pixelmon.util.helpers.SpriteHelper;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -435,8 +439,18 @@ public class ParserUtility {
 					return pokemon.isShiny();
 				case "hiddenpower":
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
-				case "texturelocation":
-					return ItemPixelmonSprite.getTextureLocation(pokemon);
+				case "texturelocation": {
+					String filePath = "pixelmon:sprites/";
+					EnumSpecialTexture specialTexture = pokemon.getSpecialTexture();
+					if ((pokemon.getFormEnum() instanceof EnumNoForm || pokemon.getFormEnum() instanceof EnumPrimal) && pokemon.getFormEnum().isTemporary()) {
+						specialTexture = EnumSpecialTexture.None;
+					}
+					if (pokemon.isShiny()) {
+						filePath += "shiny";
+						specialTexture = EnumSpecialTexture.None;
+					}
+					return filePath + ("pokemon/" + pokemon.getSpecies().getNationalPokedexNumber() + SpriteHelper.getSpriteExtra(pokemon.getSpecies().name, pokemon.getForm(), pokemon.getGender(), specialTexture.id));
+				}
 				case "customtexture":
 					return getCustomTexture(pokemon);
 				case "form":
