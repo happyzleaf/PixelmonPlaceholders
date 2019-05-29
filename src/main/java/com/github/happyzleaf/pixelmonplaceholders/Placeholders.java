@@ -4,6 +4,7 @@ import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.storage.PartyStorage;
 import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
+import com.pixelmonmod.pixelmon.enums.forms.IEnumForm;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.storage.PlayerPartyStorage;
 import me.rojo8399.placeholderapi.*;
@@ -150,7 +151,19 @@ public class Placeholders {
 			}
 			
 			if (pokemon != null) {
-				return parsePokedexInfo(pokemon, copyOfRange(values, 1, values.length));
+				if (values.length > 1) {
+					IEnumForm form = null;
+					for (IEnumForm f : EnumSpecies.formList.get(pokemon)) {
+						if (((Enum) f).name().toLowerCase().equals(values[1])) {
+							form = f;
+							break;
+						}
+					}
+					if (form != null || values[1].equals("normal")) {
+						return parsePokedexInfo(pokemon, form, copyOfRange(values, 2, values.length));
+					}
+				}
+				return parsePokedexInfo(pokemon, null, copyOfRange(values, 1, values.length));
 			}
 		} else {
 			throw new NoValueException("Not enough arguments.");

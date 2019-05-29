@@ -21,6 +21,7 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumNature;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
+import com.pixelmonmod.pixelmon.enums.forms.IEnumForm;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
@@ -87,12 +88,12 @@ public class ParserUtility {
 		}
 	}
 	
-	public static Object parsePokedexInfo(EnumSpecies pokemon, String[] values) throws NoValueException {
+	public static Object parsePokedexInfo(EnumSpecies pokemon, @Nullable IEnumForm form, String[] values) throws NoValueException {
 		if (values.length == 0) {
 			return pokemon.name;
 		}
 		
-		BaseStats stats = pokemon.getBaseStats();
+		BaseStats stats = form == null ? pokemon.getBaseStats() : pokemon.getBaseStats(form);
 		
 		switch (values[0]) {
 			case "name":
@@ -501,12 +502,10 @@ public class ParserUtility {
 						}
 					}
 					break;
-//				case "type":
-//					return pokemon.
 			}
 		}
 		
-		return parsePokedexInfo(pokemon.getSpecies(), values);
+		return parsePokedexInfo(pokemon.getSpecies(), pokemon.getFormEnum(), values);
 	}
 	
 	private static Key<Value<String>> PARTICLE_ID;
@@ -530,6 +529,7 @@ public class ParserUtility {
 	 * @param index The index in the array values where the method should start
 	 */
 	public static Object asReadableList(String[] values, int index, Object[] data) {
+		if (data == null) return "";
 		String separator = ", ";
 		if (values.length == index + 1) {
 			separator = values[index].replaceAll("--", " ");
@@ -537,7 +537,8 @@ public class ParserUtility {
 		String list = "";
 		for (int i = 0; i < data.length; i++) {
 			Object d = data[i];
-			if (i == 0) {
+			if (d == null) continue;
+			if (list.isEmpty()) {
 				list = d.toString();
 			} else {
 				list = list.concat(separator + d.toString());
