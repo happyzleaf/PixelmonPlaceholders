@@ -14,6 +14,7 @@ import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EnumSpecialTexture;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Gender;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
@@ -278,7 +279,7 @@ public class ParserUtility {
 			case "egggroups":
 				return asReadableList(values, 1, stats.eggGroups);
 			case "texturelocation":
-				return "pixelmon:sprites/pokemon/" + String.format("%03d", stats.nationalPokedexNumber);
+				return "pixelmon:sprites/" + GuiResources.getSpritePath(pokemon, stats.form, stats.malePercent > 0 ? Gender.Male : Gender.Female, false, false);
 			case "move":
 				if (values.length > 1) {
 					try {
@@ -497,11 +498,9 @@ public class ParserUtility {
 								return pokemon.getOriginalTrainer() == null ? PPConfig.noneText : pokemon.getOriginalTrainer();
 							case "uuid":
 								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
-							default:
-								throwWrongInput("name", "uuid");
 						}
 					}
-					break;
+					throwWrongInput("name", "uuid");
 			}
 		}
 		
