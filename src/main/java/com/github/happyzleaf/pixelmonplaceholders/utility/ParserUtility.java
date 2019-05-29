@@ -8,6 +8,7 @@ import com.pixelmonmod.pixelmon.api.pokemon.SpecFlag;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
 import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
+import com.pixelmonmod.pixelmon.client.gui.GuiResources;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
@@ -20,11 +21,7 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
 import com.pixelmonmod.pixelmon.enums.EnumNature;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
-import com.pixelmonmod.pixelmon.enums.forms.EnumNoForm;
-import com.pixelmonmod.pixelmon.enums.forms.EnumPrimal;
-import com.pixelmonmod.pixelmon.items.ItemPixelmonSprite;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
-import com.pixelmonmod.pixelmon.util.helpers.SpriteHelper;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -139,6 +136,7 @@ public class ParserUtility {
 						String result = stats.abilities[ability];
 						return result == null ? PPConfig.noneText : result;
 					}
+					throw new NoValueException("Wrong input. Expected valujes: [1, 2, h]");
 				} else {
 					throw new NoValueException("Not enough arguments.");
 				}
@@ -413,6 +411,8 @@ public class ParserUtility {
 				case "ability":
 					if (values.length == 1) {
 						return pokemon.getAbility().getName();
+					} else if (values[1].equals("slot")) {
+						return pokemon.getAbilitySlot() == 2 ? "h" : pokemon.getAbilitySlot() + 1;
 					}
 					break;
 				case "ball":
@@ -439,17 +439,8 @@ public class ParserUtility {
 					return pokemon.isShiny();
 				case "hiddenpower":
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
-				case "texturelocation": {
-					String filePath = "pixelmon:sprites/";
-					EnumSpecialTexture specialTexture = pokemon.getSpecialTexture();
-					if ((pokemon.getFormEnum() instanceof EnumNoForm || pokemon.getFormEnum() instanceof EnumPrimal) && pokemon.getFormEnum().isTemporary()) {
-						specialTexture = EnumSpecialTexture.None;
-					}
-					if (pokemon.isShiny()) {
-						filePath += "shiny";
-						specialTexture = EnumSpecialTexture.None;
-					}
-					return filePath + ("pokemon/" + pokemon.getSpecies().getNationalPokedexNumber() + SpriteHelper.getSpriteExtra(pokemon.getSpecies().name, pokemon.getForm(), pokemon.getGender(), specialTexture.id));
+				case "texturelocation": { // TODO add eggs sprite
+					return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getSpecialTexture() != EnumSpecialTexture.None, pokemon.isShiny());
 				}
 				case "customtexture":
 					return getCustomTexture(pokemon);
