@@ -131,7 +131,7 @@ public class ParserUtility {
 			case "ability":
 				if (values.length > 1) {
 					String value1 = values[1];
-					int ability = value1.equals("1") ? 0 : value1.equals("2") ? 1 : value1.equalsIgnoreCase("h") ? 2 : -1;
+					int ability = value1.equals("1") ? 0 : value1.equals("2") ? 1 : value1.toLowerCase().equals("h") ? 2 : -1;
 					if (ability != -1) {
 						String result = stats.abilities[ability];
 						return result == null ? PPConfig.noneText : result;
@@ -429,7 +429,7 @@ public class ParserUtility {
 					if (values.length == 1) {
 						return pokemon.getAbility().getName();
 					} else if (values[1].equals("slot")) {
-						return pokemon.getAbilitySlot() == 2 ? "h" : pokemon.getAbilitySlot() + 1;
+						return pokemon.getAbilitySlot() == 2 ? "H" : pokemon.getAbilitySlot() + 1;
 					}
 					break;
 				case "ball":
@@ -458,11 +458,23 @@ public class ParserUtility {
 					return pokemon.isShiny();
 				case "hiddenpower":
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
-				case "texturelocation": { // TODO add eggs sprite
-					return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getSpecialTexture() != EnumSpecialTexture.None, pokemon.isShiny());
+				case "texturelocation": {
+					if (pokemon.isEgg()) {
+						EnumSpecies species = pokemon.getSpecies();
+						int cycles = pokemon.getEggCycles();
+						return "pixelmon:sprites/eggs/"
+								+ (species == EnumSpecies.Togepi ? "togepi" : species == EnumSpecies.Manaphy ? "manaphy" : "egg")
+								+ (cycles > 10 ? "1" : cycles > 5 ? "2" : "3");
+					} else {
+						return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getSpecialTexture() != EnumSpecialTexture.None, pokemon.isShiny());
+					}
 				}
 				case "customtexture":
-					return getCustomTexture(pokemon);
+					String custom = pokemon.getCustomTexture();
+					if (custom == null || custom.isEmpty()) {
+						return PPConfig.noneText;
+					}
+					return custom;
 				case "form":
 					return pokemon.getForm();
 				case "extraspecs":
@@ -489,18 +501,12 @@ public class ParserUtility {
 						}
 					}
 					break;
+//				case "type":
+//					return pokemon.
 			}
 		}
 		
 		return parsePokedexInfo(pokemon.getSpecies(), values);
-	}
-	
-	private static Object getCustomTexture(Pokemon pokemon) {
-		String custom = pokemon.getCustomTexture();
-		if (custom == null || custom.isEmpty()) {
-			return PPConfig.noneText;
-		}
-		return custom;
 	}
 	
 	private static Key<Value<String>> PARTICLE_ID;
