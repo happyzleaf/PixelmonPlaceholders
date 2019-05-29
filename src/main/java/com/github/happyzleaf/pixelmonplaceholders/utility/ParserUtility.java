@@ -101,7 +101,7 @@ public class ParserUtility {
 				return stats.catchRate;
 			case "nationalid":
 				return stats.nationalPokedexNumber;
-			case "rarity":
+			case "rarity": // TODO add
 				throw new NoValueException("rarity has been disabled for now");
 				/*if (values.length == 2) {
 //					int rarity;
@@ -136,7 +136,7 @@ public class ParserUtility {
 						String result = stats.abilities[ability];
 						return result == null ? PPConfig.noneText : result;
 					}
-					throw new NoValueException("Wrong input. Expected valujes: [1, 2, h]");
+					throwWrongInput("1", "2", "h");
 				} else {
 					throw new NoValueException("Not enough arguments.");
 				}
@@ -241,11 +241,15 @@ public class ParserUtility {
 										return stats.evYields.get(StatsType.SpecialDefence);
 									case "spe":
 										return stats.evYields.get(StatsType.Speed);
+									default:
+										throwWrongInput("hp", "atk", "def", "spa", "spd", "spe");
 								}
 							}
 							break;
 						case "yields":
 							return stats.evYields.values().stream().mapToInt(value -> value).sum();
+						default:
+							throwWrongInput("hp", "atk", "def", "spa", "spd", "spe", "yield", "yields");
 					}
 				}
 				break;
@@ -264,6 +268,8 @@ public class ParserUtility {
 								return getDropsInfo(values, 2, drops, optDrop1_f);
 							case "optional2":
 								return getDropsInfo(values, 2, drops, optDrop2_f);
+							default:
+								throwWrongInput("main", "rare", "optional1", "optional2");
 						}
 					}
 				}
@@ -282,14 +288,17 @@ public class ParserUtility {
 						} else {
 							return PPConfig.moveNotAvailableText;
 						}
-					} catch (NumberFormatException ignored) {
-					}
+					} catch (NumberFormatException ignored) {}
 				}
 				break;
 			case "moves":
 				return asReadableList(values, 1, getAllAttackNames(stats));
 		}
 		throw new NoValueException();
+	}
+	
+	private static void throwWrongInput(Object... expectedValues) throws NoValueException {
+		throw new NoValueException("Wrong input." + (expectedValues.length > 0 ? " Expected values: " + Arrays.toString(expectedValues) : ""));
 	}
 	
 	public static Object[] getAllAttackNames(BaseStats stats) {
@@ -351,6 +360,8 @@ public class ParserUtility {
 											return Arrays.stream(pokemon.getStats().ivs.getArray()).sum();
 										case "totalpercentage":
 											return formatDouble((Arrays.stream(pokemon.getStats().ivs.getArray()).sum()) * 100 / 186d);
+										default:
+											throwWrongInput("hp", "atk", "def", "spa", "spd", "spe", "total", "totalpercentage");
 									}
 								}
 								break;
@@ -373,9 +384,13 @@ public class ParserUtility {
 											return Arrays.stream(pokemon.getStats().evs.getArray()).sum();
 										case "totalpercentage":
 											return formatDouble(Arrays.stream(pokemon.getStats().evs.getArray()).sum() * 100 / 510d);
+										default:
+											throwWrongInput("hp", "atk", "def", "spa", "spd", "spe", "total", "totalpercentage");
 									}
 								}
 								break;
+							default:
+								throwWrongInput("hp", "atk", "def", "spa", "spd", "spe", "ivs", "evs");
 						}
 					}
 					break;
@@ -392,6 +407,8 @@ public class ParserUtility {
 								return pos.getY();
 							case "z":
 								return pos.getZ();
+							default:
+								throwWrongInput("x", "y", "z");
 						}
 					}
 					break;
@@ -427,6 +444,8 @@ public class ParserUtility {
 								return nature.increasedStat == StatsType.None ? PPConfig.noneText : nature.increasedStat.getLocalizedName();
 							case "decreased":
 								return nature.decreasedStat == StatsType.None ? PPConfig.noneText : nature.decreasedStat.getLocalizedName();
+							default:
+								throwWrongInput("", "increased", "decreased");
 						}
 					}
 					return nature;
@@ -465,6 +484,8 @@ public class ParserUtility {
 								return pokemon.getOriginalTrainer() == null ? PPConfig.noneText : pokemon.getOriginalTrainer();
 							case "uuid":
 								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
+							default:
+								throwWrongInput("name", "uuid");
 						}
 					}
 					break;
