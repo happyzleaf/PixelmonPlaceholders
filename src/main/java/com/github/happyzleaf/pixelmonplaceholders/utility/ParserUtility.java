@@ -1,6 +1,7 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
+import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.pokemon.ISpecType;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
@@ -9,6 +10,7 @@ import com.pixelmonmod.pixelmon.api.world.WeatherType;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
 import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
 import com.pixelmonmod.pixelmon.client.gui.GuiResources;
+import com.pixelmonmod.pixelmon.config.PixelmonConfig;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
@@ -19,6 +21,9 @@ import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.StatsType;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.Evolution;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.evolution.conditions.*;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.extraStats.LakeTrioStats;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.extraStats.MeltanStats;
+import com.pixelmonmod.pixelmon.entities.pixelmon.stats.extraStats.MewStats;
 import com.pixelmonmod.pixelmon.enums.EnumNature;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.EnumType;
@@ -35,8 +40,6 @@ import net.minecraft.world.biome.Biome;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
-import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.entity.Entity;
 
 import javax.annotation.Nullable;
@@ -308,6 +311,14 @@ public class ParserUtility {
 		throw new NoValueException("Wrong input." + (expectedValues.length > 0 ? " Expected values: " + Arrays.toString(expectedValues) : ""));
 	}
 	
+	private static boolean checkSpecies(String name, Pokemon pokemon, EnumSpecies... species) throws NoValueException {
+		if (Arrays.stream(species).noneMatch(s -> s == pokemon.getSpecies())) {
+			throw new NoValueException(String.format("Wrong input. '%s' can only be used by %s.", name, Arrays.toString(species)));
+		}
+		
+		return true;
+	}
+	
 	public static Object[] getAllAttackNames(BaseStats stats) {
 		return stats.getAllMoves().stream().map(attack -> attack.getActualMove().getLocalizedName()).toArray();
 	}
@@ -438,6 +449,7 @@ public class ParserUtility {
 					} else if (values[1].equals("slot")) {
 						return pokemon.getAbilitySlot() == 2 ? "H" : pokemon.getAbilitySlot() + 1;
 					}
+					
 					break;
 				case "ball":
 					return pokemon.getCaughtBall().getItem().getLocalizedName();
@@ -451,10 +463,11 @@ public class ParserUtility {
 								return nature.increasedStat == StatsType.None ? PPConfig.noneText : nature.increasedStat.getLocalizedName();
 							case "decreased":
 								return nature.decreasedStat == StatsType.None ? PPConfig.noneText : nature.decreasedStat.getLocalizedName();
-							default:
-								throwWrongInput("", "increased", "decreased");
 						}
+						
+						throwWrongInput("increased", "decreased");
 					}
+					
 					return nature;
 				}
 				case "gender":
@@ -478,10 +491,12 @@ public class ParserUtility {
 				}
 				case "customtexture":
 					String custom = pokemon.getCustomTexture();
-					if (custom == null || custom.isEmpty()) {
-						return PPConfig.noneText;
+					if (custom != null && !custom.isEmpty()) {
+						return custom;
 					}
-					return custom;
+					
+					return PPConfig.noneText;
+				
 				case "form":
 					return pokemon.getForm();
 				case "extraspecs":
@@ -489,10 +504,11 @@ public class ParserUtility {
 						ISpecType spec = PokemonSpec.getSpecForKey(values[1]);
 						if (spec instanceof SpecFlag) { //Could move to SpecType<Boolean> but let's imply this is the standard for boolean-based specs.
 							return ((SpecFlag) spec).matches(pokemon);
-						} else {
-							throw new NoValueException("Spec not supported.");
 						}
+						
+						throw new NoValueException("Spec not supported.");
 					}
+					
 					throw new NoValueException("Not enough arguments.");
 				case "aura":
 					return getAuraID(pokemon);
@@ -505,7 +521,78 @@ public class ParserUtility {
 								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
 						}
 					}
+					
 					throwWrongInput("name", "uuid");
+				case "eggsteps": // since 2.1.4
+					if (!pokemon.isEgg()) {
+						throw new NoValueException("The pixelmon is not in an egg.");
+					}
+					
+					if (values.length > 1) {
+						int current = pokemon.getEggCycles() * PixelmonConfig.stepsPerEggCycle + pokemon.getEggSteps();
+						switch (values[1]) {
+							case "current":
+								return current;
+							case "needed":
+								return pokemon.getBaseStats().eggCycles * PixelmonConfig.stepsPerEggCycle - current;
+						}
+					}
+					
+					throwWrongInput("current", "needed");
+				case "mew":
+					if (checkSpecies("mew", pokemon, EnumSpecies.Mew)) {
+						if (values.length > 1 && values[1].equals("clones")) {
+							MewStats mew = (MewStats) pokemon.getExtraStats();
+							if (values.length > 2) {
+								switch (values[2]) {
+									case "used":
+										return mew.numCloned == MewStats.MAX_CLONES;
+									case "total":
+										return mew.numCloned;
+								}
+							}
+							
+							return mew.numCloned + "/" + MewStats.MAX_CLONES;
+						}
+						
+						throwWrongInput("clones");
+					}
+				case "laketrio":
+					if (checkSpecies("laketrio", pokemon, EnumSpecies.Uxie, EnumSpecies.Mesprit, EnumSpecies.Azelf)) {
+						if (values.length > 1 && values[1].equals("rubies")) {
+							LakeTrioStats lakeTrio = (LakeTrioStats) pokemon.getExtraStats();
+							if (values.length > 2) {
+								switch (values[2]) {
+									case "used":
+										return lakeTrio.numEnchanted == PixelmonConfig.lakeTrioMaxEnchants;
+									case "total":
+										return lakeTrio.numEnchanted;
+								}
+							}
+							
+							return lakeTrio.numEnchanted + "/" + PixelmonConfig.lakeTrioMaxEnchants;
+						}
+						
+						throwWrongInput("rubies");
+					}
+				case "meltan":
+					if (checkSpecies("meltan", pokemon, EnumSpecies.Meltan)) {
+						MeltanStats meltan = (MeltanStats) pokemon.getExtraStats();
+						if (values.length > 1 && values[1].equals("oressmelted")) {
+							if (values.length > 2) {
+								switch (values[2]) {
+									case "used":
+										return meltan.oresSmelted > 0;
+									case "total":
+										return meltan.oresSmelted;
+								}
+							}
+							
+							throwWrongInput("used", "total");
+						}
+						
+						throwWrongInput("oressmelted");
+					}
 			}
 		}
 		
