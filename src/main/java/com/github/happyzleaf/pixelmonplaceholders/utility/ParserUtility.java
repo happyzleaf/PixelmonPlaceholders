@@ -26,10 +26,13 @@ import com.pixelmonmod.pixelmon.enums.forms.IEnumForm;
 import com.pixelmonmod.pixelmon.items.heldItems.HeldItem;
 import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.biome.Biome;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.api.data.key.Key;
@@ -40,6 +43,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 public class ParserUtility {
 	private static Field mainDrop_f, rareDrop_f, optDrop1_f, optDrop2_f;
@@ -508,21 +512,23 @@ public class ParserUtility {
 		return parsePokedexInfo(pokemon.getSpecies(), pokemon.getFormEnum(), values);
 	}
 	
-	private static Key<Value<String>> PARTICLE_ID;
-	
-	static {
-		try {
-			PARTICLE_ID = (Key<Value<String>>) Class.forName("de.randombyte.entityparticles.data.EntityParticlesKeys").getField("PARTICLE_ID").get(null);
-		} catch (ClassNotFoundException | IllegalAccessException | NoSuchFieldException | ClassCastException e) {
-			PARTICLE_ID = null;
+	@Nullable
+	public static String getAuraID(Pokemon pokemon) {
+		NBTTagCompound persistentData = pokemon.getPersistentData();
+		if (persistentData.hasKey("entity-particles:particle")) {
+			return persistentData.getString("entity-particles:particle");
+		} else {
+			return checkForSpongeData(persistentData);
 		}
 	}
 	
-	private static Object getAuraID(Pokemon pokemon) {
-		EntityPixelmon entity = pokemon.getOrSpawnPixelmon(null);
-		Object result = PARTICLE_ID == null ? PPConfig.noneText : ((Entity) entity).get(PARTICLE_ID).map(p -> (Object) p).orElse(PPConfig.noneText);
-		entity.unloadEntity();
-		return result;
+	@Nullable
+	private static String checkForSpongeData(NBTTagCompound data) {
+		NBTTagList manipulators = data.getCompoundTag("SpongeData").getTagList("CustomManipulators", Constants.NBT.TAG_COMPOUND);
+		NBTTagCompound manipulator = (NBTTagCompound) StreamSupport.stream(manipulators.spliterator(), false)
+				.filter(nbt -> nbt instanceof NBTTagCompound && "entity-particles:particle".equals(((NBTTagCompound) nbt).getString("ManipulatorId")))
+				.findAny().orElse(null);
+		return manipulator == null ? null : manipulator.getCompoundTag("ManipulatorData").getString("Id");
 	}
 	
 	/**
