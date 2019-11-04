@@ -28,6 +28,7 @@ import me.rojo8399.placeholderapi.NoValueException;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.commons.lang3.ArrayUtils;
@@ -91,14 +92,14 @@ public class ParserUtility {
 	
 	public static Object parsePokedexInfo(EnumSpecies pokemon, @Nullable IEnumForm form, String[] values) throws NoValueException {
 		if (values.length == 0) {
-			return pokemon.name;
+			return pokemon.getLocalizedName();
 		}
 		
 		BaseStats stats = form == null ? pokemon.getBaseStats() : pokemon.getBaseStats(form);
 		
 		switch (values[0]) {
 			case "name":
-				return pokemon.name;
+				return pokemon.getLocalizedName();
 			case "catchrate":
 				return stats.catchRate;
 			case "nationalid":
@@ -124,12 +125,12 @@ public class ParserUtility {
 				}
 				break;*/
 			case "postevolutions":
-				return asReadableList(values, 1, stats.evolutions.stream().map(evolution -> evolution.to.name).toArray());
+				return asReadableList(values, 1, stats.evolutions.stream().map(evolution -> getLocalizedName(evolution.to.name)).toArray());
 			case "preevolutions":
 				return asReadableList(values, 1, stats.preEvolutions);
 			case "evolutions":
 				//WHAT AM I DOING
-				return asReadableList(values, 1, ArrayUtils.addAll(ArrayUtils.add(ArrayUtils.addAll(new Object[]{}, stats.preEvolutions), pokemon.name), stats.evolutions.stream().map(evolution -> evolution.to.name).toArray()));
+				return asReadableList(values, 1, ArrayUtils.addAll(ArrayUtils.add(ArrayUtils.addAll(new Object[]{}, stats.preEvolutions), pokemon.getLocalizedName()), stats.evolutions.stream().map(evolution -> getLocalizedName(evolution.to.name)).toArray()));
 			case "ability":
 				if (values.length > 1) {
 					String value1 = values[1];
@@ -169,7 +170,7 @@ public class ParserUtility {
 					} else {
 						Evolution evol = stats.evolutions.get(evolution);
 						if (values.length < 3) {
-							return stats.evolutions.get(evolution).to.name;
+							return getLocalizedName(stats.evolutions.get(evolution).to.name);
 						} else {
 							String choice = values[2];
 							if (choice.equals("list")) { //TODO write better
@@ -429,7 +430,7 @@ public class ParserUtility {
 					return formatBigNumbers(pokemon.getFriendship());
 				case "ability":
 					if (values.length == 1) {
-						return pokemon.getAbility().getName();
+						return pokemon.getAbility().getLocalizedName();
 					} else if (values[1].equals("slot")) {
 						return pokemon.getAbilitySlot() == 2 ? "H" : pokemon.getAbilitySlot() + 1;
 					}
@@ -453,9 +454,9 @@ public class ParserUtility {
 					return nature;
 				}
 				case "gender":
-					return pokemon.getGender().name();
+					return pokemon.getGender().getLocalizedName();
 				case "growth":
-					return pokemon.getGrowth().name();
+					return pokemon.getGrowth().getLocalizedName();
 				case "shiny":
 					return pokemon.isShiny();
 				case "hiddenpower":
@@ -590,6 +591,10 @@ public class ParserUtility {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
 	
+	public static String getLocalizedName(String pokemon) {
+		return I18n.translateToLocal("pixelmon." + pokemon.toLowerCase() + ".name");
+	}
+	
 	private static Map<String, EvoParser> evoParsers = new HashMap<>();
 	
 	static {
@@ -698,13 +703,13 @@ public class ParserUtility {
 		evoParsers.put("time", new EvoParser<TimeCondition>(TimeCondition.class) { //TODO fix
 			@Override
 			public Object parse(TimeCondition condition, String[] values, int index) throws NoValueException {
-				return normalizeText(condition.time.name());
+				return normalizeText(condition.time.getLocalizedName());
 			}
 		});
 		evoParsers.put("weather", new EvoParser<WeatherCondition>(WeatherCondition.class) {
 			@Override
 			public Object parse(WeatherCondition condition, String[] values, int index) throws IllegalAccessException {
-				return normalizeText(((WeatherType) weather_f.get(condition)).name());
+				return normalizeText(((WeatherType) weather_f.get(condition)).getLocalizedName());
 			}
 		});
 	}
