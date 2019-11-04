@@ -6,12 +6,15 @@ import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.forms.IEnumForm;
 import com.pixelmonmod.pixelmon.pokedex.Pokedex;
+import com.pixelmonmod.pixelmon.spawning.PixelmonSpawning;
 import com.pixelmonmod.pixelmon.storage.PlayerPartyStorage;
 import me.rojo8399.placeholderapi.*;
 import net.minecraft.entity.player.EntityPlayerMP;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
 
@@ -126,11 +129,18 @@ public class Placeholders {
 	
 	@Placeholder(id = "pixelmon")
 	public Object pixelmon(@Token String token) throws NoValueException {
-		switch (token) {
-			case "dexsize":
-				return EnumSpecies.values().length;
+		String[] values = token.toLowerCase().split("_");
+		if (values.length > 0) {
+			switch (values[0]) {
+				case "dexsize":
+					return EnumSpecies.values().length;
+				case "nextlegendary":
+					return TimeUnit.MILLISECONDS.toSeconds(PixelmonSpawning.legendarySpawner.nextSpawnTime - System.currentTimeMillis());
+			}
 		}
-		throw new NoValueException();
+		
+		throwWrongInput("dexsize", "nextlegendary");
+		return null;
 	}
 	
 	@Placeholder(id = "pokedex")

@@ -1,7 +1,6 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
-import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.pokemon.ISpecType;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
@@ -307,11 +306,11 @@ public class ParserUtility {
 		throw new NoValueException();
 	}
 	
-	private static void throwWrongInput(Object... expectedValues) throws NoValueException {
+	public static void throwWrongInput(Object... expectedValues) throws NoValueException {
 		throw new NoValueException("Wrong input." + (expectedValues.length > 0 ? " Expected values: " + Arrays.toString(expectedValues) : ""));
 	}
 	
-	private static boolean checkSpecies(String name, Pokemon pokemon, EnumSpecies... species) throws NoValueException {
+	public static boolean checkSpecies(String name, Pokemon pokemon, EnumSpecies... species) throws NoValueException {
 		if (Arrays.stream(species).noneMatch(s -> s == pokemon.getSpecies())) {
 			throw new NoValueException(String.format("Wrong input. '%s' can only be used by %s.", name, Arrays.toString(species)));
 		}
