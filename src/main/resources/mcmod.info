@@ -2,7 +2,7 @@
 	{
 		"modid": "pixelmonplaceholders",
 		"name": "PixelmonPlaceholders",
-		"description": "Pixelmon Placeholders",
+		"description": "Provides placeholder's support for Reforged.",
 		"version": "${version}",
 		"mcversion": "${mcversion}",
 		"url": "https://github.com/happyzleaf/PixelmonPlaceholders",

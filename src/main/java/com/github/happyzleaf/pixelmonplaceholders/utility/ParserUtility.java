@@ -304,7 +304,7 @@ public class ParserUtility {
 	}
 	
 	public static Object[] getAllAttackNames(BaseStats stats) {
-		return stats.getAllMoves().stream().map(attack -> attack.baseAttack.getLocalizedName()).toArray();
+		return stats.getAllMoves().stream().map(attack -> attack.getActualMove().getLocalizedName()).toArray();
 	}
 	
 	public static Object parsePokemonInfo(Entity owner, Pokemon pokemon, String[] values) throws NoValueException {

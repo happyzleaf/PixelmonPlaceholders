@@ -16,17 +16,18 @@ import org.spongepowered.api.plugin.Plugin;
 
 import java.io.File;
 
-@Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, version = PixelmonPlaceholders.VERSION, description = "Pixelmon Placeholders",
-		url = "http://www.happyzleaf.com/", authors = {"happyzleaf"},
+@Plugin(id = PixelmonPlaceholders.PLUGIN_ID, name = PixelmonPlaceholders.PLUGIN_NAME, version = PixelmonPlaceholders.VERSION,
+		description = "Provides placeholder's support for Reforged.",
+		url = "https://www.happyzleaf.com/", authors = "happyzleaf",
 		dependencies = {
-				@Dependency(id = "pixelmon", version = "7.0.6"),
+				@Dependency(id = "pixelmon", version = "7.0.8"),
 				@Dependency(id = "placeholderapi", version = "[4.4,)"),
 				@Dependency(id = "entity-particles", version = "2.1", optional = true)
 		})
 public class PixelmonPlaceholders {
 	public static final String PLUGIN_ID = "pixelmonplaceholders";
 	public static final String PLUGIN_NAME = "PixelmonPlaceholders";
-	public static final String VERSION = "2.1.3";
+	public static final String VERSION = "2.1.4";
 	
 	public static final Logger LOGGER = LoggerFactory.getLogger(PLUGIN_NAME);
 	
