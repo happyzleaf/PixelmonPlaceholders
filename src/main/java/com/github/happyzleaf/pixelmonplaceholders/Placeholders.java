@@ -69,9 +69,7 @@ public class Placeholders {
 				case "losses":
 					return party.stats.getLosses();
 				case "wlratio": {
-					int wins = party.stats.getWins();
-					int total = wins + party.stats.getLosses();
-					return formatDouble(total > 0 ? (double) wins / total : 1);
+					return formatDouble((double) party.stats.getWins() / Math.max(party.stats.getLosses(), 1));
 				}
 				case "balance":
 					return formatBigNumbers(party.getMoney());
