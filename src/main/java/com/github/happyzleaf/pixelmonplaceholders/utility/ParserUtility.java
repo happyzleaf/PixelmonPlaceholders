@@ -6,10 +6,12 @@ import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import com.pixelmonmod.pixelmon.api.pokemon.SpecFlag;
 import com.pixelmonmod.pixelmon.api.world.WeatherType;
+import com.pixelmonmod.pixelmon.battles.attacks.Attack;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
 import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
 import com.pixelmonmod.pixelmon.client.gui.GuiResources;
 import com.pixelmonmod.pixelmon.config.PixelmonConfig;
+import com.pixelmonmod.pixelmon.entities.SpawnLocationType;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
@@ -45,6 +47,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class ParserUtility {
@@ -131,12 +134,15 @@ public class ParserUtility {
 				}
 				break;*/
 			case "postevolutions":
-				return asReadableList(values, 1, stats.evolutions.stream().map(evolution -> getLocalizedName(evolution.to.name)).toArray());
+				return asReadableList(values, 1, stats.evolutions.stream().map(evolution -> getPokemonName(evolution.to.name)).toArray());
 			case "preevolutions":
-				return asReadableList(values, 1, stats.preEvolutions);
-			case "evolutions":
-				//WHAT AM I DOING
-				return asReadableList(values, 1, ArrayUtils.addAll(ArrayUtils.add(ArrayUtils.addAll(new Object[]{}, stats.preEvolutions), pokemon.getLocalizedName()), stats.evolutions.stream().map(evolution -> getLocalizedName(evolution.to.name)).toArray()));
+				return asReadableList(values, 1, Arrays.stream(stats.preEvolutions).map(EnumSpecies::getPokemonName).toArray());
+			case "evolutions": {
+				List<String> evolutions = new ArrayList<>(Arrays.stream(stats.preEvolutions).map(EnumSpecies::getPokemonName).collect(Collectors.toList()));
+				evolutions.add(pokemon.getLocalizedName());
+				evolutions.addAll(stats.evolutions.stream().map(evolution -> getPokemonName(evolution.to.name)).collect(Collectors.toList()));
+				return asReadableList(values, 1, evolutions.toArray());
+			}
 			case "ability":
 				if (values.length > 1) {
 					String value1 = values[1];
@@ -150,12 +156,12 @@ public class ParserUtility {
 					throw new NoValueException("Not enough arguments.");
 				}
 			case "abilities":
-				return asReadableList(values, 1, stats.abilities);
+				return asReadableList(values, 1, Arrays.stream(stats.abilities).map(s -> I18n.translateToLocal("abiility." + s + ".name")).toArray());
 			case "biomes": // TODO add
 				throw new NoValueException("biomes have been disabled for now");
 				//return asReadableList(values, 2, Arrays.stream(stats.biomeIDs).map(id -> Biome.getBiome(id).getBiomeName()).toArray());
 			case "spawnlocations":
-				return asReadableList(values, 1, stats.spawnLocations);
+				return asReadableList(values, 1, Arrays.stream(stats.spawnLocations).map(SpawnLocationType::getLocalizedName).toArray());
 			case "doesevolve":
 				return stats.evolutions.size() != 0;
 			case "evolutionscount":
@@ -176,7 +182,7 @@ public class ParserUtility {
 					} else {
 						Evolution evol = stats.evolutions.get(evolution);
 						if (values.length < 3) {
-							return getLocalizedName(stats.evolutions.get(evolution).to.name);
+							return getPokemonName(stats.evolutions.get(evolution).to.name);
 						} else {
 							String choice = values[2];
 							if (choice.equals("list")) { //TODO write better
@@ -219,7 +225,7 @@ public class ParserUtility {
 				}
 				break;
 			case "type":
-				return asReadableList(values, 1, stats.getTypeList().toArray());
+				return asReadableList(values, 1, stats.getTypeList().stream().map(EnumType::getLocalizedName).toArray());
 			case "basestats":
 				if (values.length > 1) {
 					switch (values[1]) {
@@ -438,7 +444,7 @@ public class ParserUtility {
 						}
 						return moveset.get(moveIndex);
 					} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-						return asReadableList(values, 1, moveset.attacks);
+						return asReadableList(values, 1, Arrays.stream(moveset.attacks).map(attack -> attack.getActualMove().getLocalizedName()).toArray());
 					}
 				case "friendship":
 					return formatBigNumbers(pokemon.getFriendship());
@@ -683,7 +689,7 @@ public class ParserUtility {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
 	
-	public static String getLocalizedName(String pokemon) {
+	public static String getPokemonName(String pokemon) {
 		return I18n.translateToLocal("pixelmon." + pokemon.toLowerCase() + ".name");
 	}
 	
@@ -739,7 +745,7 @@ public class ParserUtility {
 		evoParsers.put("gender", new EvoParser<GenderCondition>(GenderCondition.class) {
 			@Override
 			public Object parse(GenderCondition condition, String[] values, int index) {
-				return asReadableList(values, index, condition.genders/*.stream().filter(gender -> gender != Gender.None)*/.toArray());
+				return asReadableList(values, index, condition.genders.stream().map(Gender::getLocalizedName).toArray());
 			}
 		});
 		evoParsers.put("helditem", new EvoParser<HeldItemCondition>(HeldItemCondition.class) {
@@ -783,9 +789,9 @@ public class ParserUtility {
 			public Object parse(PartyCondition condition, String[] values, int index) throws NoValueException {
 				if (values.length > index) {
 					if (values[index].equals("pokemon")) {
-						return asReadableList(values, index + 1, condition.withPokemon.toArray());
+						return asReadableList(values, index + 1, condition.withPokemon.stream().map(EnumSpecies::getLocalizedName).toArray());
 					} else if (values[index].equals("type")) {
-						return asReadableList(values, index + 1, condition.withTypes.toArray());
+						return asReadableList(values, index + 1, condition.withTypes.stream().map(EnumType::getLocalizedName).toArray());
 					}
 				}
 				throw new NoValueException();
