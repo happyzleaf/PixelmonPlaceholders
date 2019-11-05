@@ -156,7 +156,7 @@ public class ParserUtility {
 					throw new NoValueException("Not enough arguments.");
 				}
 			case "abilities":
-				return asReadableList(values, 1, Arrays.stream(stats.abilities).map(s -> I18n.translateToLocal("abiility." + s + ".name")).toArray());
+				return asReadableList(values, 1, Arrays.stream(stats.abilities).map(s -> I18n.translateToLocal("ability." + s + ".name")).toArray());
 			case "biomes": // TODO add
 				throw new NoValueException("biomes have been disabled for now");
 				//return asReadableList(values, 2, Arrays.stream(stats.biomeIDs).map(id -> Biome.getBiome(id).getBiomeName()).toArray());
