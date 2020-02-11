@@ -66,7 +66,7 @@ public class Placeholders {
 				case "dexpercentage":
 					return formatDouble(party.pokedex.countCaught() * 100 / (double) EnumSpecies.values().length);
 				case "seencount":
-					return party.pokedex.getSeenMap().size();
+					return party.pokedex.countSeen();
 				case "wins":
 					return party.stats.getWins();
 				case "losses":
