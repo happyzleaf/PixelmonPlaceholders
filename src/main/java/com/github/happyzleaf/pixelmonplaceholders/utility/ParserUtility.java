@@ -99,16 +99,16 @@ public class ParserUtility {
 		}
 	}
 	
-	public static Object parsePokedexInfo(EnumSpecies pokemon, @Nullable IEnumForm form, String[] values) throws NoValueException {
+	public static Object parsePokedexInfo(EnumSpecies species, @Nullable IEnumForm form, String[] values) throws NoValueException {
 		if (values.length == 0) {
-			return pokemon.getLocalizedName();
+			return species.getLocalizedName();
 		}
 		
-		BaseStats stats = form == null ? pokemon.getBaseStats() : pokemon.getBaseStats(form);
-		
+		BaseStats stats = form == null ? species.getBaseStats() : species.getBaseStats(form);
+
 		switch (values[0]) {
 			case "name":
-				return pokemon.getLocalizedName();
+				return species.getLocalizedName();
 			case "catchrate":
 				return stats.catchRate;
 			case "nationalid":
@@ -139,7 +139,7 @@ public class ParserUtility {
 				return asReadableList(values, 1, Arrays.stream(stats.preEvolutions).map(EnumSpecies::getPokemonName).toArray());
 			case "evolutions": {
 				List<String> evolutions = new ArrayList<>(Arrays.stream(stats.preEvolutions).map(EnumSpecies::getPokemonName).collect(Collectors.toList()));
-				evolutions.add(pokemon.getLocalizedName());
+				evolutions.add(species.getLocalizedName());
 				evolutions.addAll(stats.evolutions.stream().map(evolution -> getPokemonName(evolution.to.name)).collect(Collectors.toList()));
 				return asReadableList(values, 1, evolutions.toArray());
 			}
@@ -270,7 +270,7 @@ public class ParserUtility {
 				break;
 			case "drops":
 				if (values.length > 1) {
-					Set<PokemonDropInformation> drops = DropItemRegistry.pokemonDrops.get(pokemon);
+					Set<PokemonDropInformation> drops = DropItemRegistry.pokemonDrops.get(species);
 					if (drops == null) {
 						return PPConfig.noneText;
 					} else {
@@ -292,7 +292,7 @@ public class ParserUtility {
 			case "egggroups":
 				return asReadableList(values, 1, stats.eggGroups);
 			case "texturelocation":
-				return "pixelmon:sprites/" + GuiResources.getSpritePath(pokemon, stats.form, stats.malePercent > 0 ? Gender.Male : Gender.Female, false, false);
+				return "pixelmon:sprites/" + GuiResources.getSpritePath(species, stats.form, stats.malePercent > 0 ? Gender.Male : Gender.Female, false, false);
 			case "move":
 				if (values.length > 1) {
 					try {
@@ -312,7 +312,7 @@ public class ParserUtility {
 		throw new NoValueException();
 	}
 	
-	public static void throwWrongInput(Object... expectedValues) throws NoValueException {
+	public static Object throwWrongInput(Object... expectedValues) throws NoValueException {
 		throw new NoValueException("Wrong input." + (expectedValues.length > 0 ? " Expected values: " + Arrays.toString(expectedValues) : ""));
 	}
 	

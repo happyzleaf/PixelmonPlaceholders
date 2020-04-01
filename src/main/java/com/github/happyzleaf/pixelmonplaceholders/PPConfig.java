@@ -28,6 +28,8 @@ public class PPConfig {
 	
 	private static String teamMemberNotAvailableMessage = "";
 	public static Text teamMemberNotAvailableText;
+
+	public static double rayTraceDistance = 80d;
 	
 	private static ConfigurationLoader<CommentedConfigurationNode> loader;
 	private static CommentedConfigurationNode node;
@@ -41,16 +43,17 @@ public class PPConfig {
 	}
 	
 	public static void loadConfig() {
-		if (!file.exists()) {
+		load();
+
+		if (!file.exists() || node.getNode("miscellaneous", "rayTraceDistance").isVirtual()) {
 			saveConfig();
 		}
-		
-		load();
 		
 		ConfigurationNode miscellaneous = node.getNode("miscellaneous");
 		disableEggInfo = miscellaneous.getNode("disableEggInfo").getBoolean();
 		maxFractionDigits = miscellaneous.getNode("maxFractionDigits").getInt();
 		minFractionDigits = miscellaneous.getNode("minFractionDigits").getInt();
+		rayTraceDistance = miscellaneous.getNode("rayTraceDistance").getDouble();
 		
 		ConfigurationNode messages = node.getNode("messages");
 		disabledEggMessage = messages.getNode("disabledEgg").getString();
@@ -67,12 +70,11 @@ public class PPConfig {
 	}
 	
 	public static void saveConfig() {
-		load();
-		
 		CommentedConfigurationNode miscellaneous = node.getNode("miscellaneous");
 		miscellaneous.getNode("disableEggInfo").setValue(disableEggInfo);
 		miscellaneous.getNode("maxFractionDigits").setComment("How many digits should be used in decimal values. 2 means 1.12, 3 means 1.123 etc.").setValue(maxFractionDigits);
 		miscellaneous.getNode("minFractionDigits").setComment("The opposite of maxFractionDigits, fills with zeros until there are enough digits. 2 means 1.00, 3 means 1.000 etc.").setValue(minFractionDigits);
+		miscellaneous.getNode("rayTraceDistance").setComment("How far the ray trace will look for pokémon. Default: 80.0").setValue(rayTraceDistance);
 		
 		CommentedConfigurationNode messages = node.getNode("messages");
 		messages.getNode("disabledEgg").setValue(disabledEggMessage);
