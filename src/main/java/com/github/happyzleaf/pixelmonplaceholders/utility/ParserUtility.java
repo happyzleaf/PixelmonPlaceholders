@@ -5,8 +5,6 @@ import com.pixelmonmod.pixelmon.api.pokemon.ISpecType;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import com.pixelmonmod.pixelmon.api.pokemon.SpecFlag;
-import com.pixelmonmod.pixelmon.api.world.WeatherType;
-import com.pixelmonmod.pixelmon.battles.attacks.Attack;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
 import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
 import com.pixelmonmod.pixelmon.client.gui.GuiResources;
@@ -40,7 +38,6 @@ import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.api.entity.Entity;
 
 import javax.annotation.Nullable;
@@ -52,9 +49,8 @@ import java.util.stream.StreamSupport;
 
 public class ParserUtility {
 	private static Field mainDrop_f, rareDrop_f, optDrop1_f, optDrop2_f;
-	private static Field friendship_f, level_f, type_f, weather_f;
 	private static Field biomeName_f;
-	
+
 	static {
 		try {
 			mainDrop_f = PokemonDropInformation.class.getDeclaredField("mainDrop");
@@ -65,23 +61,14 @@ public class ParserUtility {
 			optDrop1_f.setAccessible(true);
 			optDrop2_f = PokemonDropInformation.class.getDeclaredField("optDrop2");
 			optDrop2_f.setAccessible(true);
-			
-			friendship_f = FriendshipCondition.class.getDeclaredField("friendship");
-			friendship_f.setAccessible(true);
-			level_f = LevelCondition.class.getDeclaredField("level");
-			level_f.setAccessible(true);
-			type_f = MoveTypeCondition.class.getDeclaredField("type");
-			type_f.setAccessible(true);
-			weather_f = WeatherCondition.class.getDeclaredField("weather");
-			weather_f.setAccessible(true);
-			
+
 			biomeName_f = Arrays.stream(Biome.class.getDeclaredFields()).filter(field -> field.getName().equals("field_76791_y") || field.getName().equals("biomeName")).findFirst().get(); // Sorry I'm lazy and I hate this plugin anyway.
 			biomeName_f.setAccessible(true);
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * @param from inclusive
 	 * @param to   exclusive
@@ -98,12 +85,12 @@ public class ParserUtility {
 			return Arrays.copyOfRange(original, from, to);
 		}
 	}
-	
+
 	public static Object parsePokedexInfo(EnumSpecies species, @Nullable IEnumForm form, String[] values) throws NoValueException {
 		if (values.length == 0) {
 			return species.getLocalizedName();
 		}
-		
+
 		BaseStats stats = form == null ? species.getBaseStats() : species.getBaseStats(form);
 
 		switch (values[0]) {
@@ -219,7 +206,7 @@ public class ParserUtility {
 									return PPConfig.evolutionNotAvailableText;
 								}
 							}
-							
+
 						}
 					}
 				}
@@ -311,34 +298,34 @@ public class ParserUtility {
 		}
 		throw new NoValueException();
 	}
-	
+
 	public static Object throwWrongInput(Object... expectedValues) throws NoValueException {
 		throw new NoValueException("Wrong input." + (expectedValues.length > 0 ? " Expected values: " + Arrays.toString(expectedValues) : ""));
 	}
-	
+
 	public static boolean checkSpecies(String name, Pokemon pokemon, EnumSpecies... species) throws NoValueException {
 		if (Arrays.stream(species).noneMatch(s -> s == pokemon.getSpecies())) {
 			throw new NoValueException(String.format("Wrong input. '%s' can only be used by %s.", name, Arrays.toString(species)));
 		}
-		
+
 		return true;
 	}
-	
+
 	public static Object[] getAllAttackNames(BaseStats stats) {
 		return stats.getAllMoves().stream().map(attack -> attack.getActualMove().getLocalizedName()).toArray();
 	}
-	
+
 	public static Object parsePokemonInfo(Entity owner, Pokemon pokemon, String[] values) throws NoValueException {
 		if (pokemon == null) {
 			return PPConfig.teamMemberNotAvailableText;
 		}
-		
+
 		if (PPConfig.disableEggInfo && pokemon.isEgg()) {
 			if (values.length != 1 || !values[0].equals("texturelocation")) {
 				return PPConfig.disabledEggText;
 			}
 		}
-		
+
 		if (values.length > 0) {
 			switch (values[0]) {
 				case "nickname":
@@ -454,7 +441,7 @@ public class ParserUtility {
 					} else if (values[1].equals("slot")) {
 						return pokemon.getAbilitySlot() == 2 ? "H" : pokemon.getAbilitySlot() + 1;
 					}
-					
+
 					break;
 				case "ball":
 					return pokemon.getCaughtBall().getItem().getLocalizedName();
@@ -469,10 +456,10 @@ public class ParserUtility {
 							case "decreased":
 								return nature.decreasedStat == StatsType.None ? PPConfig.noneText : nature.decreasedStat.getLocalizedName();
 						}
-						
+
 						throwWrongInput("increased", "decreased");
 					}
-					
+
 					return nature;
 				}
 				case "gender":
@@ -499,9 +486,9 @@ public class ParserUtility {
 					if (custom != null && !custom.isEmpty()) {
 						return custom;
 					}
-					
+
 					return PPConfig.noneText;
-				
+
 				case "form":
 					return pokemon.getForm();
 				case "extraspecs":
@@ -510,10 +497,10 @@ public class ParserUtility {
 						if (spec instanceof SpecFlag) { //Could move to SpecType<Boolean> but let's imply this is the standard for boolean-based specs.
 							return ((SpecFlag) spec).matches(pokemon);
 						}
-						
+
 						throw new NoValueException("Spec not supported.");
 					}
-					
+
 					throw new NoValueException("Not enough arguments.");
 				case "aura":
 					return getAuraID(pokemon);
@@ -526,13 +513,13 @@ public class ParserUtility {
 								return pokemon.getOriginalTrainerUUID() == null ? PPConfig.noneText : pokemon.getOriginalTrainerUUID();
 						}
 					}
-					
+
 					throwWrongInput("name", "uuid");
 				case "eggsteps": // since 2.1.4
 					if (!pokemon.isEgg()) {
 						throw new NoValueException("The pixelmon is not in an egg.");
 					}
-					
+
 					if (values.length > 1) {
 						int current = pokemon.getEggCycles() * PixelmonConfig.stepsPerEggCycle + pokemon.getEggSteps();
 						switch (values[1]) {
@@ -542,7 +529,7 @@ public class ParserUtility {
 								return pokemon.getBaseStats().eggCycles * PixelmonConfig.stepsPerEggCycle - current;
 						}
 					}
-					
+
 					throwWrongInput("current", "needed");
 				case "mew":
 					if (checkSpecies("mew", pokemon, EnumSpecies.Mew)) {
@@ -556,10 +543,10 @@ public class ParserUtility {
 										return mew.numCloned;
 								}
 							}
-							
+
 							return mew.numCloned + "/" + MewStats.MAX_CLONES;
 						}
-						
+
 						throwWrongInput("clones");
 					}
 				case "laketrio":
@@ -574,10 +561,10 @@ public class ParserUtility {
 										return lakeTrio.numEnchanted;
 								}
 							}
-							
+
 							return lakeTrio.numEnchanted + "/" + PixelmonConfig.lakeTrioMaxEnchants;
 						}
-						
+
 						throwWrongInput("rubies");
 					}
 				case "meltan":
@@ -592,18 +579,18 @@ public class ParserUtility {
 										return meltan.oresSmelted;
 								}
 							}
-							
+
 							throwWrongInput("used", "total");
 						}
-						
+
 						throwWrongInput("oressmelted");
 					}
 			}
 		}
-		
+
 		return parsePokedexInfo(pokemon.getSpecies(), pokemon.getFormEnum(), values);
 	}
-	
+
 	@Nullable
 	public static String getAuraID(Pokemon pokemon) {
 		NBTTagCompound persistentData = pokemon.getPersistentData();
@@ -613,7 +600,7 @@ public class ParserUtility {
 			return checkForSpongeData(persistentData);
 		}
 	}
-	
+
 	@Nullable
 	private static String checkForSpongeData(NBTTagCompound data) {
 		NBTTagList manipulators = data.getCompoundTag("SpongeData").getTagList("CustomManipulators", Constants.NBT.TAG_COMPOUND);
@@ -622,7 +609,7 @@ public class ParserUtility {
 				.findAny().orElse(null);
 		return manipulator == null ? null : manipulator.getCompoundTag("ManipulatorData").getString("Id");
 	}
-	
+
 	/**
 	 * @param index The index in the array values where the method should start
 	 */
@@ -644,11 +631,11 @@ public class ParserUtility {
 		}
 		return list.isEmpty() ? PPConfig.noneText : list;
 	}
-	
+
 	public static String normalizeText(String text) {
 		return text.substring(1) + text.substring(1, text.length() - 1);
 	}
-	
+
 	public static String formatBigNumbers(int number) {
 		if (number < 1000) {
 			return String.valueOf(number);
@@ -660,18 +647,18 @@ public class ParserUtility {
 			return (double) Math.round(number / 100000000) / 10 + "b";
 		}
 	}
-	
+
 	private static DecimalFormat formatter = new DecimalFormat();
-	
+
 	static {
 		formatter.setMaximumFractionDigits(PPConfig.maxFractionDigits);
 		formatter.setMinimumFractionDigits(PPConfig.minFractionDigits);
 	}
-	
+
 	public static String formatDouble(double number) {
 		return formatter.format(number);
 	}
-	
+
 	public static Object getDropsInfo(String[] values, int index, Set<PokemonDropInformation> drops, Field field) {
 		try {
 			List<Object> results = new ArrayList<>();
@@ -684,17 +671,17 @@ public class ParserUtility {
 			return null;
 		}
 	}
-	
+
 	public static Object getItemStackInfo(@Nullable ItemStack is) {
 		return is == null || is.getCount() == 0 ? PPConfig.noneText : is.getCount() + " " + is.getDisplayName();
 	}
-	
+
 	public static String getPokemonName(String pokemon) {
 		return I18n.translateToLocal("pixelmon." + pokemon.toLowerCase() + ".name");
 	}
-	
+
 	private static Map<String, EvoParser> evoParsers = new HashMap<>();
-	
+
 	static {
 		evoParsers.put("biome", new EvoParser<BiomeCondition>(BiomeCondition.class) {
 			@Override
@@ -738,8 +725,7 @@ public class ParserUtility {
 		evoParsers.put("friendship", new EvoParser<FriendshipCondition>(FriendshipCondition.class) {
 			@Override
 			public Object parse(FriendshipCondition condition, String[] values, int index) throws IllegalAccessException {
-				int f = friendship_f.getInt(condition);
-				return f == -1 ? 220 : f;
+				return condition.friendship == -1 ? 220 : condition.friendship;
 			}
 		});
 		evoParsers.put("gender", new EvoParser<GenderCondition>(GenderCondition.class) {
@@ -763,7 +749,7 @@ public class ParserUtility {
 		evoParsers.put("level", new EvoParser<LevelCondition>(LevelCondition.class) {
 			@Override
 			public Object parse(LevelCondition condition, String[] values, int index) throws IllegalAccessException {
-				return level_f.getInt(condition);
+				return condition.level;
 			}
 		});
 		evoParsers.put("move", new EvoParser<MoveCondition>(MoveCondition.class) {
@@ -775,7 +761,13 @@ public class ParserUtility {
 		evoParsers.put("movetype", new EvoParser<MoveTypeCondition>(MoveTypeCondition.class) {
 			@Override
 			public Object parse(MoveTypeCondition condition, String[] values, int index) throws IllegalAccessException {
-				return ((EnumType) type_f.get(condition)).getLocalizedName();
+				return condition.type.getLocalizedName();
+			}
+		});
+		evoParsers.put("ore", new EvoParser<OreCondition>(OreCondition.class) {
+			@Override
+			public Object parse(OreCondition condition, String[] values, int index) throws NoValueException, IllegalAccessException {
+				return condition.ores;
 			}
 		});
 //		evoParsers.put("partyalolan", new EvoParser<PartyAlolanCondition>(PartyAlolanCondition.class) {
@@ -797,7 +789,22 @@ public class ParserUtility {
 				throw new NoValueException();
 			}
 		});
-		//TODO StatRatioCondition
+		evoParsers.put("stats", new EvoParser<StatRatioCondition>(StatRatioCondition.class) {
+			@Override
+			public Object parse(StatRatioCondition condition, String[] values, int index) throws NoValueException, IllegalAccessException {
+				if (values.length > index) {
+					switch (values[index]) {
+						case "ratio":
+							return formatDouble(condition.ratio);
+						case "1":
+							return condition.stat1.getLocalizedName();
+						case "2":
+							return condition.stat2.getLocalizedName();
+					}
+				}
+				throw new NoValueException();
+			}
+		});
 		evoParsers.put("time", new EvoParser<TimeCondition>(TimeCondition.class) { //TODO fix
 			@Override
 			public Object parse(TimeCondition condition, String[] values, int index) throws NoValueException {
@@ -807,18 +814,18 @@ public class ParserUtility {
 		evoParsers.put("weather", new EvoParser<WeatherCondition>(WeatherCondition.class) {
 			@Override
 			public Object parse(WeatherCondition condition, String[] values, int index) throws IllegalAccessException {
-				return normalizeText(((WeatherType) weather_f.get(condition)).getLocalizedName());
+				return condition.weather.getLocalizedName();
 			}
 		});
 	}
-	
+
 	public static abstract class EvoParser<T extends EvoCondition> {
 		public Class<T> clazz;
-		
+
 		public EvoParser(Class<T> clazz) {
 			this.clazz = clazz;
 		}
-		
+
 		public abstract Object parse(T condition, String[] values, int index) throws NoValueException, IllegalAccessException;
 	}
 }
