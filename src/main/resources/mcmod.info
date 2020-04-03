@@ -11,6 +11,13 @@
 		"credits": "",
 		"logoFile": "",
 		"screenshots": [],
-		"dependencies": []
+		"requiredMods": [
+			"pixelmon@7.2.2",
+			"placeholderapi@4.4"
+		],
+		"dependencies": [
+			"pixelmon@7.2.2",
+			"placeholderapi@4.4"
+		]
 	}
 ]
