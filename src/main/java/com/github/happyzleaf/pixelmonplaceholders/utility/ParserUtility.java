@@ -478,7 +478,7 @@ public class ParserUtility {
 								+ (species == EnumSpecies.Togepi ? "togepi" : species == EnumSpecies.Manaphy ? "manaphy" : "egg")
 								+ (cycles > 10 ? "1" : cycles > 5 ? "2" : "3");
 					} else {
-						return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getSpecialTexture() != EnumSpecialTexture.None, pokemon.isShiny());
+						return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getFormEnum() != EnumSpecial.Base, pokemon.isShiny());
 					}
 				}
 				case "customtexture":
