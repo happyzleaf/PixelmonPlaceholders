@@ -13,7 +13,7 @@ import org.spongepowered.api.entity.living.player.Player;
 
 public class PartyParser extends ParserBase<Entity> {
 	public PartyParser() {
-		super(Entity.class, "1", "2", "3", "4", "5", "6");
+		super("1", "2", "3", "4", "5", "6");
 	}
 
 	@Override

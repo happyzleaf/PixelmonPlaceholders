@@ -1,6 +1,7 @@
 package com.happyzleaf.pixelmonplaceholders.parser;
 
 import com.google.common.collect.ImmutableList;
+import com.happyzleaf.pixelmonplaceholders.parser.args.Args;
 import com.pixelmonmod.pixelmon.util.ITranslatable;
 import me.rojo8399.placeholderapi.NoValueException;
 import org.spongepowered.api.Sponge;
@@ -42,6 +43,10 @@ public abstract class ParserBase<T> implements Parser<T> {
 		throw new NoValueException(String.format("Argument not valid. ('%s')", arg), keys);
 	}
 
+	protected Object invalidArguments(Args args) throws NoValueException {
+		return invalidArguments(args.previous(""));
+	}
+
 	protected Object notEnoughArguments() throws NoValueException {
 		throw new NoValueException("Not enough arguments.", keys);
 	}
@@ -54,11 +59,19 @@ public abstract class ParserBase<T> implements Parser<T> {
 		return arg;
 	}
 
-	protected int parseInt(String integer) throws NoValueException {
+	protected int parseInt(String number) throws NoValueException {
 		try {
-			return Integer.parseInt(integer);
+			return Integer.parseInt(number);
 		} catch (NumberFormatException e) {
-			throw new NoValueException(String.format("'%s' is not an integer.", integer));
+			throw new NoValueException(String.format("'%s' is not an integer.", number));
+		}
+	}
+
+	protected double parseDouble(String number) throws NoValueException {
+		try {
+			return Double.parseDouble(number);
+		} catch (NumberFormatException e) {
+			throw new NoValueException(String.format("'%s' is not an double.", number));
 		}
 	}
 
@@ -68,5 +81,21 @@ public abstract class ParserBase<T> implements Parser<T> {
 		}
 
 		return integer;
+	}
+
+	protected String formatBigNumber(int number) {
+		if (number < 1000) {
+			return String.valueOf(number);
+		} else if (number < 1000000) {
+			return (double) Math.round(number / 100.0) / 10 + "k";
+		} else if (number < 1000000000) {
+			return (double) Math.round(number / 100000.0) / 10 + "m";
+		} else {
+			return (double) Math.round(number / 100000000.0) / 10 + "b";
+		}
+	}
+
+	protected String formatDouble(double number) {
+		return String.valueOf(number); // TODO
 	}
 }

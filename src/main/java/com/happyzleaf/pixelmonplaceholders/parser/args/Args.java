@@ -38,14 +38,10 @@ public class Args {
 	/**
 	 * Gets the previous token without modifying the position.
 	 *
-	 * @return The previous token.
+	 * @return The previous token, or <code>value</code> if not available.
 	 */
-	public String previous() {
-		if (position == 0) {
-			throw new IllegalStateException("There isn't any previous argument.");
-		}
-
-		return args[position - 1];
+	public String previous(String value) {
+		return position == 0 ? value : args[position - 1];
 	}
 
 	public static Args of(@Nullable String token) {
