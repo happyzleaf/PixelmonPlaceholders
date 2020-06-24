@@ -472,13 +472,9 @@ public class ParserUtility {
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
 				case "texturelocation": {
 					if (pokemon.isEgg()) {
-						EnumSpecies species = pokemon.getSpecies();
-						int cycles = pokemon.getEggCycles();
-						return "pixelmon:sprites/eggs/"
-								+ (species == EnumSpecies.Togepi ? "togepi" : species == EnumSpecies.Manaphy ? "manaphy" : "egg")
-								+ (cycles > 10 ? "1" : cycles > 5 ? "2" : "3");
+						return GuiResources.getEggSprite(pokemon.getSpecies(), pokemon.getEggCycles());
 					} else {
-						return "pixelmon:" + GuiResources.getSpritePath(pokemon.getSpecies(), pokemon.getForm(), pokemon.getGender(), pokemon.getSpecialTexture() != EnumSpecialTexture.None, pokemon.isShiny());
+						return GuiResources.getPokemonSprite(pokemon); // TODO test
 					}
 				}
 				case "customtexture":
