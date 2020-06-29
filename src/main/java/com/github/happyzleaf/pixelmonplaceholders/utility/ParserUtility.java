@@ -13,7 +13,6 @@ import com.pixelmonmod.pixelmon.entities.SpawnLocationType;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
-import com.pixelmonmod.pixelmon.entities.pixelmon.EnumSpecialTexture;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Gender;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
@@ -290,7 +289,8 @@ public class ParserUtility {
 						} else {
 							return PPConfig.moveNotAvailableText;
 						}
-					} catch (NumberFormatException ignored) {}
+					} catch (NumberFormatException ignored) {
+					}
 				}
 				break;
 			case "moves":
@@ -431,7 +431,11 @@ public class ParserUtility {
 						}
 						return moveset.get(moveIndex);
 					} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-						return asReadableList(values, 1, Arrays.stream(moveset.attacks).map(attack -> attack.getActualMove().getLocalizedName()).toArray());
+						return asReadableList(values, 1,
+								Arrays.stream(moveset.attacks)
+										.filter(Objects::nonNull)
+										.map(attack -> attack.getActualMove().getLocalizedName())
+										.toArray());
 					}
 				case "friendship":
 					return formatBigNumbers(pokemon.getFriendship());

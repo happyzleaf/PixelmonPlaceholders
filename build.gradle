@@ -2,26 +2,26 @@ buildscript {
     repositories {
         jcenter()
         maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+            name = 'forge'
+            url = 'http://files.minecraftforge.net/maven'
         }
         maven {
-            url = "https://plugins.gradle.org/m2/"
+            url = 'https://plugins.gradle.org/m2/'
         }
     }
     dependencies {
-        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
-        classpath "gradle.plugin.org.spongepowered:spongegradle:0.8"
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'gradle.plugin.org.spongepowered:spongegradle:0.8'
     }
 }
 
 plugins {
-    id "java"
+    id 'java'
 }
 
 
-apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: "org.spongepowered.plugin"
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.plugin'
 
 version = modVersion
 group = modGroup
@@ -29,7 +29,7 @@ archivesBaseName = modBaseName
 
 minecraft {
     version = project.forgeVersion
-    runDir = "run"
+    runDir = 'run'
 
     // the mappings can be changed at any time, and must be in the following format.
     // snapshot_YYYYMMDD   snapshot are built nightly.
@@ -59,19 +59,19 @@ dependencies {
 
 processResources {
     // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', project.minecraft.version
 
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
-        include "mcmod.info"
+        include 'mcmod.info'
 
         // replace version and mcversion
-        expand "version": project.version, "mcversion": project.minecraft.version
+        expand 'version': project.version, 'mcversion': project.minecraft.version
     }
 
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
-        exclude "mcmod.info"
+        exclude 'mcmod.info'
     }
 }
