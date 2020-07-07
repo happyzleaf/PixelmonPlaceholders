@@ -475,11 +475,13 @@ public class ParserUtility {
 				case "hiddenpower":
 					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
 				case "texturelocation": {
+					ResourceLocation location;
 					if (pokemon.isEgg()) {
-						return GuiResources.getEggSprite(pokemon.getSpecies(), pokemon.getEggCycles());
+						location = GuiResources.getEggSprite(pokemon.getSpecies(), pokemon.getEggCycles());
 					} else {
-						return GuiResources.getPokemonSprite(pokemon); // TODO test
+						location = GuiResources.getPokemonSprite(pokemon);
 					}
+					return location.toString().replace("textures/", "").replace(".png", "");
 				}
 				case "customtexture":
 					String custom = pokemon.getCustomTexture();
