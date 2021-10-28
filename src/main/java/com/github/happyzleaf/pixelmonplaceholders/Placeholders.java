@@ -14,9 +14,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
-
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.happyzleaf.pixelmonplaceholders.utility.ParserUtility.*;
@@ -45,7 +43,6 @@ public class Placeholders {
 	@Placeholder(id = "trainer")
 	public Object trainer(@Source Player player, @Token String token) throws NoValueException {
 		PlayerPartyStorage party = Pixelmon.storageManager.getParty((EntityPlayerMP) player);
-
 		String[] values = token.split("_");
 		if (values.length > 0) {
 			switch (values[0]) {
@@ -119,10 +116,12 @@ public class Placeholders {
 					return EnumSpecies.values().length;
 				case "nextlegendary":
 					return TimeUnit.MILLISECONDS.toSeconds(PixelmonSpawning.legendarySpawner.nextSpawnTime - System.currentTimeMillis());
+				case "nextmegaboss":
+					return TimeUnit.MILLISECONDS.toSeconds(PixelmonSpawning.megaBossSpawner.nextSpawnTime - System.currentTimeMillis());
 			}
 		}
 
-		return throwWrongInput("dexsize", "nextlegendary");
+		return throwWrongInput("dexsize", "nextlegendary", "nextmegaboss");
 	}
 
 	private static EnumSpecies testName(String name) {

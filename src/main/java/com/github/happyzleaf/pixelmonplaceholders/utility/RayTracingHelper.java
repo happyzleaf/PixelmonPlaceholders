@@ -20,7 +20,7 @@ public class RayTracingHelper {
 
 		Vec3d start = source.getPositionEyes(1f);
 		Vec3d look = source.getLook(1f);
-		Vec3d end = start.addVector(look.x * distance, look.y * distance, look.z * distance);
+		Vec3d end = start.add(look.x * distance, look.y * distance, look.z * distance);
 
 		RayTraceResult closestBlock = source.world.rayTraceBlocks(start, end, false, false, true);
 		if (closestBlock != null) {

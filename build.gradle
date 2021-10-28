@@ -1,77 +1,70 @@
 buildscript {
     repositories {
-        jcenter()
-        maven {
-            name = 'forge'
-            url = 'http://files.minecraftforge.net/maven'
-        }
-        maven {
-            url = 'https://plugins.gradle.org/m2/'
-        }
+        maven { url = "https://files.minecraftforge.net/maven" }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-        classpath 'gradle.plugin.org.spongepowered:spongegradle:0.8'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
     }
 }
 
 plugins {
     id 'java'
+    id 'net.kyori.blossom' version '1.2.0'
 }
 
 
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'org.spongepowered.plugin'
+apply plugin: 'net.minecraftforge.gradle'
 
 version = modVersion
 group = modGroup
-archivesBaseName = modBaseName
 
 minecraft {
-    version = project.forgeVersion
-    runDir = 'run'
 
-    // the mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   snapshot are built nightly.
-    // stable_#            stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
-    // simply re-run your setup task after changing the mappings to update your workspace.
-    mappings = project.mcpVersion
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    mappings channel: project.mcpChannel, version: project.mcpVersion
+    accessTransformer = file('src/main/resources/META-INF/placeholders_at.cfg')
 
-    useDepAts = true
 }
 
 repositories {
     mavenCentral()
     maven {
-        url 'https://repo.spongepowered.org/maven/'
+        name = 'sponge-repo'
+        url = 'https://repo.spongepowered.org/maven'
     }
     maven {
         url 'https://jitpack.io'
     }
+    ivy {
+        name = 'Pixelmon Reforged'
+        url "https://download.nodecdn.net/containers/reforged/server/release"
+        metadataSources {
+            artifact()
+        }
+        patternLayout {
+            artifact "[revision]/[artifact].[ext]"
+        }
+    }
 }
 
 dependencies {
-    compile 'org.spongepowered:spongeapi:7.1.0-SNAPSHOT'
-    compile 'com.github.rojo8399:PlaceholderAPI:4.5.1'
+    minecraft 'net.minecraftforge:forge:' + forgeVersion
+    compileOnly 'org.spongepowered:spongeapi:' + spongeVersion
+    compileOnly 'com.github.rojo8399:PlaceholderAPI:4.5.1'
+    compileOnly 'pixelmon:Pixelmon-1.12.2-' + pixelmonVersion + '-server:' + pixelmonVersion
 }
 
+blossom {
+    replaceToken '@version@', modVersion, 'src/main/java/com/github/happyzleaf/pixelmonplaceholders/PixelmonPlaceholders.java'
+}
+
+
 processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property 'version', project.version
-    inputs.property 'mcversion', project.minecraft.version
 
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        // replace version and mcversion
-        expand 'version': project.version, 'mcversion': project.minecraft.version
+    filesMatching("mcmod.info") {
+        expand(
+                'version': project.modVersion,
+                'mcversion': project.mcVersion
+        )
     }
 
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
 }
