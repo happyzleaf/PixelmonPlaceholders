@@ -1,10 +1,12 @@
 package com.github.happyzleaf.pixelmonplaceholders.utility;
 
 import com.github.happyzleaf.pixelmonplaceholders.PPConfig;
+import com.pixelmonmod.pixelmon.RandomHelper;
 import com.pixelmonmod.pixelmon.api.pokemon.ISpecType;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.PokemonSpec;
 import com.pixelmonmod.pixelmon.api.pokemon.SpecFlag;
+import com.pixelmonmod.pixelmon.battles.attacks.Attack;
 import com.pixelmonmod.pixelmon.battles.attacks.AttackBase;
 import com.pixelmonmod.pixelmon.battles.attacks.specialAttacks.basic.HiddenPower;
 import com.pixelmonmod.pixelmon.client.gui.GuiResources;
@@ -13,6 +15,7 @@ import com.pixelmonmod.pixelmon.entities.SpawnLocationType;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.DropItemRegistry;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.PokemonDropInformation;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
+import com.pixelmonmod.pixelmon.entities.pixelmon.abilities.AbilityBase;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.BaseStats;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Gender;
 import com.pixelmonmod.pixelmon.entities.pixelmon.stats.Moveset;
@@ -135,10 +138,10 @@ public class ParserUtility {
 			case "ability":
 				if (values.length > 1) {
 					String value1 = values[1];
-					int ability = value1.equals("1") ? 0 : value1.equals("2") ? 1 : value1.equalsIgnoreCase("h") ? 2 : -1;
-					if (ability != -1) {
-						String result = baseStats.getAbilitiesArray()[ability];
-						return result == null ? PPConfig.noneText : result;
+					int index = value1.equals("1") ? 0 : value1.equals("2") ? 1 : value1.equalsIgnoreCase("h") ? 2 : -1;
+					if (index != -1) {
+						final List<AbilityBase> abilities = baseStats.getAllAbilities();
+						return index >= abilities.size() ? PPConfig.noneText : abilities.get(index).getLocalizedName();
 					}
 					throwWrongInput("1", "2", "h");
 				} else {
@@ -281,7 +284,7 @@ public class ParserUtility {
 			case "egggroups":
 				return asReadableList(values, 1, baseStats.eggGroups);
 			case "texturelocation":
-				return "pixelmon:" + GuiResources.getSpritePath(species, baseStats.getFormNumber(), baseStats.isMaleOnly() ? Gender.Male : Gender.Female, "", false);
+				return "pixelmon:" + GuiResources.getSpritePath(species, baseStats.getFormNumber(), baseStats.getRandomGender(RandomHelper.rand), "", false);
 			case "move":
 				if (values.length > 1) {
 					try {
@@ -432,7 +435,8 @@ public class ParserUtility {
 						if (moveIndex < 0 || moveIndex >= 4) {
 							throw new NoValueException("The attack index must be between 0 and 4.");
 						}
-						return moveset.get(moveIndex);
+						final Attack attack = moveset.get(moveIndex);
+						return attack == null ? PPConfig.noneText : attack.getActualMove().getLocalizedName();
 					} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
 						return asReadableList(values, 1,
 								Arrays.stream(moveset.attacks)
@@ -467,7 +471,7 @@ public class ParserUtility {
 						throwWrongInput("increased", "decreased");
 					}
 
-					return nature;
+					return nature.getLocalizedName();
 				}
 				case "gender":
 					return pokemon.getGender().getLocalizedName();
@@ -476,7 +480,7 @@ public class ParserUtility {
 				case "shiny":
 					return pokemon.isShiny();
 				case "hiddenpower":
-					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs);
+					return HiddenPower.getHiddenPowerType(pokemon.getStats().ivs).getLocalizedName();
 				case "texturelocation": {
 					ResourceLocation location;
 					if (pokemon.isEgg()) {
@@ -491,7 +495,6 @@ public class ParserUtility {
 					if (custom != null && !custom.isEmpty()) {
 						return custom;
 					}
-
 					return PPConfig.noneText;
 
 				case "form":
