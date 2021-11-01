@@ -7,6 +7,7 @@ import com.pixelmonmod.pixelmon.entities.npcs.NPCTrainer;
 import com.pixelmonmod.pixelmon.entities.pixelmon.EntityPixelmon;
 import com.pixelmonmod.pixelmon.enums.EnumSpecies;
 import com.pixelmonmod.pixelmon.enums.forms.IEnumForm;
+import com.pixelmonmod.pixelmon.pokedex.Pokedex;
 import com.pixelmonmod.pixelmon.spawning.PixelmonSpawning;
 import com.pixelmonmod.pixelmon.storage.PlayerPartyStorage;
 import me.rojo8399.placeholderapi.*;
@@ -49,7 +50,7 @@ public class Placeholders {
 				case "dexcount":
 					return party.pokedex.countCaught();
 				case "dexpercentage":
-					return formatDouble(party.pokedex.countCaught() * 100 / (double) EnumSpecies.values().length);
+					return formatDouble(party.pokedex.countCaught() * 100 / (double) Pokedex.pokedexSize);
 				case "seencount":
 					return party.pokedex.countSeen();
 				case "wins":
