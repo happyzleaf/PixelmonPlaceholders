@@ -301,6 +301,10 @@ public class ParserUtility {
 				break;
 			case "moves":
 				return asReadableList(values, 1, getAllAttackNames(baseStats));
+			case "islegend":
+				return species.isLegendary();
+			case "isub":
+				return species.isUltraBeast();
 		}
 		throw new NoValueException();
 	}
